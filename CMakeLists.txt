@@ -24,9 +24,11 @@ target_link_libraries(fast_nb
     Threads::Threads
 )
 
-# Set optimization flags for performance on Apple Silicon (Clang)
+# Set optimization flags for performance
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
+  target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
 endif()
 
 # Ensure OpenMP is not enforced on Apple Silicon
