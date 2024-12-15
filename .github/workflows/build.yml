@@ -28,6 +28,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           conda install -c conda-forge pybind11
+          sudo apt install libbenchmark-dev
 
       - name: Set Up Environment on macOS
         if: runner.os == 'macOS'
