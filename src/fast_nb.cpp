@@ -98,7 +98,7 @@ double precompute_lgamma_r(int r){
 }
 
 // Updated negative binomial PMF using optimized log_comb
-double negative_binomial_pmf_optimized(int k, int r, double p, double lgamma_r) {
+double negative_binomial_pmf_fixed_r(int k, int r, double p, double lgamma_r) {
     if (k < 0) {
         return 0.0;
     }
@@ -111,6 +111,19 @@ double negative_binomial_pmf_optimized(int k, int r, double p, double lgamma_r) 
 
     // Compute log PMF and exponentiate
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+}
+
+std::vector<double> negative_binomial_pmr_vec(std::vector<int> k, int r, double p)
+{
+    double lgamma_r = precompute_lgamma_r(r);
+
+    std::vector<double> results(k.size());
+
+    for (auto i = 0; i < k.size(); ++i) {
+        results[i] = negative_binomial_pmf_fixed_r(k[i], r, p, lgamma_r);
+    }
+
+    return results;
 }
 
 float negative_binomial_pmf_lut(int k, int r, float p) {
