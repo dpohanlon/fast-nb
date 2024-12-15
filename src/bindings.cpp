@@ -3,8 +3,8 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(negative_binomial, m) {
-    m.doc() = "Python bindings for Negative Binomial PMF"; // Optional module docstring
+PYBIND11_MODULE(fast_negative_binomial, m) {
+    m.doc() = "Python bindings for Negative Binomial PMF";
 
     m.def("negative_binomial", &negative_binomial_pmf_base,
           py::arg("k"), py::arg("r"), py::arg("p"),

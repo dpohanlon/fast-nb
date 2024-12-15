@@ -32,10 +32,10 @@ add_executable(fast_nb src/main.cpp)
 target_link_libraries(fast_nb PRIVATE fast_nb_lib benchmark::benchmark Threads::Threads)
 
 # Create the Python module using Pybind11
-pybind11_add_module(negative_binomial src/bindings.cpp)
+pybind11_add_module(fast_negative_binomial src/bindings.cpp)
 
 # Link the Python module with the core library
-target_link_libraries(negative_binomial PRIVATE fast_nb_lib)
+target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib)
 
 # Set optimization flags for performance
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
