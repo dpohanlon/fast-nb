@@ -34,7 +34,7 @@ jobs:
           poetry install --no-dev
 
       - name: Build Wheels with cibuildwheel
-        uses: cibuildwheel/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v2.22.0
         with:
           output-dir: wheelhouse
 
