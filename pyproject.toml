@@ -31,3 +31,7 @@ script = "build.py"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+cibuildwheel = "^2.22.0"
+
