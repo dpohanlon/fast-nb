@@ -19,7 +19,7 @@ if(ENABLE_BENCHMARK)
     find_package(benchmark REQUIRED)
 endif()
 
-find_package(Python 3.9 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python 3.9 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Find Threads
