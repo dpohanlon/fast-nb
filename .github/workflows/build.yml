@@ -46,6 +46,9 @@ jobs:
       - name: Install dependencies Linux
         if: runner.os == 'Linux'
         run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          brew update
+          brew install pybind11
           sudo apt-get install python3-dev
           python -m pip install --upgrade pip
           pip install "pybind11[global]"
