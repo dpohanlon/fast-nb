@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13, macos-14]
         python-version: ["3.12", "3.13"]
 
     steps:
@@ -37,9 +37,11 @@ jobs:
         run: |
           sudo apt-get install python3-dev
 
-      - name: Build Wheels with cibuildwheel
+      - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.22.0
         with:
+          platforms: ${{ matrix.os }}
+          python: ${{ matrix.python-version }}
           output-dir: wheelhouse
 
       - name: Upload wheels
