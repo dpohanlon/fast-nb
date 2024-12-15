@@ -12,7 +12,7 @@ if(DEFINED CLANG_PATH)
 endif()
 
 # Find required packages
-find_package(benchmark REQUIRED)
+find_package(benchmark REQUIRED PATHS ../benchmark/build))
 find_package(Python 3.12 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
