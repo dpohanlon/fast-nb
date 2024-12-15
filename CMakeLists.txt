@@ -6,13 +6,19 @@ project(FastNB LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Option to enable Benchmark (OFF by default)
+option(ENABLE_BENCHMARK "Enable Google Benchmark" OFF)
+
 # Allow specifying a custom Clang compiler path
 if(DEFINED CLANG_PATH)
     set(CMAKE_CXX_COMPILER ${CLANG_PATH})
 endif()
 
 # Find required packages
-find_package(benchmark REQUIRED PATHS ../benchmark/build)
+if(ENABLE_BENCHMARK)
+    find_package(benchmark REQUIRED)
+endif()
+
 find_package(Python 3.12 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
@@ -28,8 +34,14 @@ target_include_directories(fast_nb_lib PUBLIC src)
 # Add executable target
 add_executable(fast_nb src/main.cpp)
 
-# Link the executable with the core library, Benchmark, and Threads
-target_link_libraries(fast_nb PRIVATE fast_nb_lib benchmark::benchmark Threads::Threads)
+# Link the executable with the core library and Threads
+target_link_libraries(fast_nb PRIVATE fast_nb_lib Threads::Threads)
+
+# Link Benchmark only if enabled
+if(ENABLE_BENCHMARK)
+    target_link_libraries(fast_nb PRIVATE benchmark::benchmark)
+    target_compile_definitions(fast_nb PRIVATE ENABLE_BENCHMARK=1)
+endif()
 
 # Create the Python module using Pybind11
 pybind11_add_module(fast_negative_binomial src/bindings.cpp)

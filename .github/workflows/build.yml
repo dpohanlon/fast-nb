@@ -28,21 +28,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           conda install -c conda-forge pybind11
-          # sudo apt install libbenchmark-dev
 
       - name: Set Up Environment on macOS
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install pybind11
-
-      - name: Install benchmark (should be optional...)
-        run: |
-          git clone https://github.com/google/benchmark.git
-          cd benchmark
-          cmake -E make_directory "build"
-          cmake -E chdir "build" cmake -DBENCHMARK_DOWNLOAD_DEPENDENCIES=on -DCMAKE_BUILD_TYPE=Release ../
-          sudo cmake --build "build" --config Release --target install
 
       - name: Install dependencies
         run: |

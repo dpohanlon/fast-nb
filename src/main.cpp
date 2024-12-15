@@ -3,28 +3,13 @@
 #include <cmath>
 #include <numeric>
 
+#ifdef ENABLE_BENCHMARK
 #include <benchmark/benchmark.h>
+#endif
 
 #include "fast_nb.cpp"
 
-// int main() {
-//     // Tolerance for comparison
-//     double tolerance = 1e-6;
-
-//     // Maximum value of k (number of failures)
-//     int max_k = 100;
-
-//     // Set of r values (number of successes)
-//     std::vector<int> r_values = {1, 5, 10, 20, 50, 100, 200, 500, 1000};
-
-//     // Set of p values (success probabilities)
-//     std::vector<double> p_values = {0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99};
-
-//     // Run the accuracy test
-//     test_accuracy(tolerance, max_k, r_values, p_values);
-
-//     return 0;
-// }
+#ifdef ENABLE_BENCHMARK
 
 static void BM_NegativeBinomialPMF(benchmark::State& state) {
     int r = 5;
@@ -49,3 +34,26 @@ static void BM_NegativeBinomialPMF(benchmark::State& state) {
 BENCHMARK(BM_NegativeBinomialPMF)->Range(16, 1 << 20)->Complexity();
 
 BENCHMARK_MAIN();
+
+#else
+
+int main() {
+    // Tolerance for comparison
+    double tolerance = 1e-6;
+
+    // Maximum value of k (number of failures)
+    int max_k = 100;
+
+    // Set of r values (number of successes)
+    std::vector<int> r_values = {1, 5, 10, 20, 50, 100, 200, 500, 1000};
+
+    // Set of p values (success probabilities)
+    std::vector<double> p_values = {0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99};
+
+    // Run the accuracy test
+    test_accuracy(tolerance, max_k, r_values, p_values);
+
+    return 0;
+}
+
+#endif
