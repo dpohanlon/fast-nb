@@ -40,14 +40,14 @@ jobs:
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.22.0
         with:
-          platforms: ${{ matrix.os }}
-          python: ${{ matrix.python-version }}
           output-dir: wheelhouse
+        env:
+          CIBW_SKIP: "*musllinux*"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ runner.os }}-py${{ matrix.python-version }}
+          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: wheelhouse/*.whl
 
   # release:
