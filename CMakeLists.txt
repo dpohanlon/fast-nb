@@ -1,5 +1,5 @@
-# CMakeLists.txt for building and linking Google Benchmark
-cmake_minimum_required(VERSION 3.10)
+# CMakeLists.txt for building and linking Google Benchmark and Pybind11
+cmake_minimum_required(VERSION 3.4...3.18)
 project(FastNB LANGUAGES CXX)
 
 # Set C++ standard
@@ -11,30 +11,46 @@ if(DEFINED CLANG_PATH)
     set(CMAKE_CXX_COMPILER ${CLANG_PATH})
 endif()
 
-# Find Google Benchmark installed via Homebrew
+# Find required packages
 find_package(benchmark REQUIRED)
+find_package(Python 3.12 COMPONENTS Interpreter Development REQUIRED)
+find_package(pybind11 CONFIG REQUIRED)
+
+# Find Threads
+find_package(Threads REQUIRED)
+
+# Create a library for the core functionality
+add_library(fast_nb_lib STATIC src/fast_nb.cpp)
+
+# Specify include directories for the library
+target_include_directories(fast_nb_lib PUBLIC src)
 
 # Add executable target
-add_executable(fast_nb fast_nb.cpp)
+add_executable(fast_nb src/main.cpp)
 
-# Link Google Benchmark and pthread
-find_package(Threads REQUIRED)
-target_link_libraries(fast_nb
-    benchmark::benchmark
-    Threads::Threads
-)
+# Link the executable with the core library, Benchmark, and Threads
+target_link_libraries(fast_nb PRIVATE fast_nb_lib benchmark::benchmark Threads::Threads)
+
+# Create the Python module using Pybind11
+pybind11_add_module(negative_binomial src/bindings.cpp)
+
+# Link the Python module with the core library
+target_link_libraries(negative_binomial PRIVATE fast_nb_lib)
 
 # Set optimization flags for performance
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
+    target_compile_options(fast_nb_lib PRIVATE -O3 -march=native -ffast-math)
+    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
+    target_compile_options(fast_nb_lib PRIVATE -O3 -march=native -ffast-math)
+    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
 endif()
 
 # Ensure OpenMP is not enforced on Apple Silicon
 if(NOT APPLE)
     find_package(OpenMP)
     if(OpenMP_CXX_FOUND)
-        target_link_libraries(fast_nb OpenMP::OpenMP_CXX)
+        target_link_libraries(fast_nb_lib PRIVATE OpenMP::OpenMP_CXX)
+        target_link_libraries(fast_nb PRIVATE OpenMP::OpenMP_CXX)
     endif()
 endif()
