@@ -27,8 +27,6 @@ jobs:
       - name: Set Up Environment on Linux
         if: runner.os == 'Linux'
         uses: conda-incubator/setup-miniconda@v3
-        run: |
-          conda install -c conda-forge pybind11
 
       - name: Set Up Environment on macOS
         if: runner.os == 'macOS'
@@ -36,8 +34,17 @@ jobs:
           brew update
           brew install pybind11
 
-      - name: Install dependencies
+      - name: Install dependencies macOS
         run: |
+          python -m pip install --upgrade pip
+          pip install "pybind11[global]"
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --only main
+
+      - name: Install dependencies Linux
+        run: |
+          conda install -c conda-forge pybind11
           python -m pip install --upgrade pip
           pip install "pybind11[global]"
           pip install poetry
