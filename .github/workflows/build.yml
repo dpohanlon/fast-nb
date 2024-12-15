@@ -13,7 +13,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14]
+        # os: [ubuntu-latest, macos-13, macos-14]
+        # python-version: ["3.12", "3.13"]
+        os: [macos-14]
         python-version: ["3.12", "3.13"]
 
     steps:
@@ -50,41 +52,40 @@ jobs:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: wheelhouse/*.whl
 
-  # release:
-  #   needs: build
-  #   runs-on: ubuntu-latest
+  release:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Download artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: wheels
-  #         path: dist/
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist/
 
-  #     - name: Upload asset to GitHub Release
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       run: |
-  #         echo "Attaching artifact to release..."
-  #         gh release upload "${{ github.ref_name }}" dist/*.whl --clobber
+      - name: Upload asset to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Attaching artifact to release..."
+          gh release upload "${{ github.ref_name }}" dist/*.whl --clobber
 
-  # publish_wheels:
-  #   needs: build_wheels
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-
-  #     - name: Download wheels
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: wheels
-  #         path: wheelhouse
-
-  #     - name: Publish to PyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.4.2
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.PYPI_API_TOKEN }}
-  #         repository_url: https://upload.pypi.org/legacy/
-  #         skip_existing: true
-  #       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  publish:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: wheelhouse
+      - name: Publish to test PyPI
+        if: ${{!startsWith(github.ref, 'refs/tags')}}
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+      - name: Publish tagged version to PyPI
+        if: startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
