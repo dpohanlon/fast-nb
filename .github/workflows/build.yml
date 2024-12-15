@@ -29,11 +29,17 @@ jobs:
       - name: Set Up Environment on Linux
         if: runner.os == 'Linux'
         steps:
-          - uses: conda-incubator/setup-miniconda@v3
+          - name: Checkout repository
+            uses: actions/checkout@v3
+
+          - name: Set Up Miniconda
+            uses: conda-incubator/setup-miniconda@v3
             with:
               auto-update-conda: true
               python-version: ${{ matrix.python-version }}
-          - run: |
+
+          - name: Install dependencies
+            run: |
               conda install -c conda-forge pybind11
 
       - name: Set Up Environment on macOS
