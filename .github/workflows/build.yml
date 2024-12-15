@@ -40,7 +40,7 @@ jobs:
           pip install "pybind11[global]"
           pip install poetry
           poetry config virtualenvs.create false
-          poetry install --no-dev
+          poetry install --only main
 
       - name: Build Wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.22.0
