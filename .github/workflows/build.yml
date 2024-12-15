@@ -24,9 +24,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Set Up Environment on Linux
-        if: runner.os == 'Linux'
-        uses: conda-incubator/setup-miniconda@v3
+      # - name: Set Up Environment on Linux
+      #   if: runner.os == 'Linux'
+      #   uses: conda-incubator/setup-miniconda@v3
 
       - name: Set Up Environment on macOS
         if: runner.os == 'macOS'
@@ -47,8 +47,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install python3-dev
-          conda install -c conda-forge pybind11
           python -m pip install --upgrade pip
+          pip install "pybind11[global]"
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --only main
