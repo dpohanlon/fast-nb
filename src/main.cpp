@@ -8,6 +8,7 @@
 #endif
 
 #include "fast_nb.cpp"
+#include "test.cpp"
 
 #ifdef ENABLE_BENCHMARK
 
