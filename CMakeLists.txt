@@ -20,7 +20,8 @@ if(ENABLE_BENCHMARK)
 endif()
 
 find_package(Python 3.9 COMPONENTS Interpreter Development.Module REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
+#find_package(pybind11 CONFIG REQUIRED)
+add_subdirectory(extern/pybind11)
 
 # Find Threads
 find_package(Threads REQUIRED)
