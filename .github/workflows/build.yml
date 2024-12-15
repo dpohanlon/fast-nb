@@ -55,6 +55,7 @@ jobs:
   release:
     needs: [build_wheels]
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
 
     steps:
       - name: Download artifact
@@ -63,30 +64,21 @@ jobs:
           pattern: wheels-*
           path: dist/
           merge-multiple: true
-      - name: Upload asset to GitHub Release
+      - name: Create release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ github.ref }}
+          tag_name: ${{ github.ref }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Attaching artifact to release..."
-          gh release upload "${{ github.ref_name }}" dist/*.whl --clobber
-
-  publish:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload release artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
-          pattern: wheels-*
-          path: dist/
-          merge-multiple: true
-      - name: Publish to test PyPI
-        if: ${{!startsWith(github.ref, 'refs/tags')}}
-        uses: pypa/gh-action-pypi-publish@v1.4.2
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-      - name: Publish tagged version to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@v1.4.2
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/*
+          asset_content_type: application/gzip
