@@ -26,9 +26,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install benchmark (should be optional...)
+        run: |
+          git clone https://github.com/google/benchmark.git
+          cd benchmark
+          cmake -E make_directory "build"
+          cmake -E chdir "build" cmake -DBENCHMARK_DOWNLOAD_DEPENDENCIES=on -DCMAKE_BUILD_TYPE=Release ../
+          cmake --build "build" --config Release --target install
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pybind11
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --no-dev
