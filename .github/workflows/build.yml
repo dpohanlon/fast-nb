@@ -34,7 +34,7 @@ jobs:
               auto-update-conda: true
               python-version: ${{ matrix.python-version }}
           - run: |
-            conda install -c conda-forge pybind11
+              conda install -c conda-forge pybind11
 
       - name: Set Up Environment on macOS
         if: runner.os == 'macOS'
