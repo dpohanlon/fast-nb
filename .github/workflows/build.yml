@@ -35,6 +35,7 @@ jobs:
           brew install pybind11
 
       - name: Install dependencies macOS
+        if: runner.os == 'macOS'
         run: |
           python -m pip install --upgrade pip
           pip install "pybind11[global]"
@@ -43,6 +44,7 @@ jobs:
           poetry install --only main
 
       - name: Install dependencies Linux
+        if: runner.os == 'Linux'
         run: |
           conda install -c conda-forge pybind11
           python -m pip install --upgrade pip
