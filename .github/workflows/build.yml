@@ -56,25 +56,29 @@ jobs:
         with:
           output-dir: wheelhouse
 
-      - name: Delete existing artifact if it exists
-        run: |
-          echo "Checking for existing artifact 'wheels'..."
-          EXISTING_ARTIFACT_ID=$(gh api repos/${{ github.repository }}/actions/artifacts --paginate | \
-            jq -r '.artifacts[] | select(.name == "wheels") | .id' || echo "")
-          if [[ -n "$EXISTING_ARTIFACT_ID" ]]; then
-            echo "Deleting existing artifact with ID $EXISTING_ARTIFACT_ID..."
-            gh api --method DELETE repos/${{ github.repository }}/actions/artifacts/$EXISTING_ARTIFACT_ID
-          else
-            echo "No existing artifact found. Proceeding to upload."
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ runner.os }}-py${{ matrix.python-version }}
           path: wheelhouse/*.whl
+
+  # release:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Download artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: wheels
+  #         path: dist/
+
+  #     - name: Upload asset to GitHub Release
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: |
+  #         echo "Attaching artifact to release..."
+  #         gh release upload "${{ github.ref_name }}" dist/*.whl --clobber
 
   # publish_wheels:
   #   needs: build_wheels
