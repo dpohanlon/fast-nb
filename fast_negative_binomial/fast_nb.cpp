@@ -22,6 +22,17 @@
 // Threshold for switching to Stirling's approximation
 const double STIRLING_THRESHOLD = 10.0;
 
+double prob(double mean, double concentration)
+{
+    double km = mean + concentration;
+
+    if (km <= 0) {
+        return 0.;
+    }
+
+    return concentration / km;
+}
+
 double lgamma_stirling(double x) {
     if (x < STIRLING_THRESHOLD) {
         // For small values of x, use the standard lgamma function
@@ -93,7 +104,12 @@ double compute_log_comb(int k, int r, double lgamma_r) {
 }
 
 // Precompute lgamma(r) since r is constant
+// TODO: template these...
 double precompute_lgamma_r(int r){
+    return std::lgamma(static_cast<double>(r));
+}
+
+double precompute_lgamma_r(double r){
     return std::lgamma(static_cast<double>(r));
 }
 
@@ -113,6 +129,51 @@ double negative_binomial_pmf_fixed_r(int k, int r, double p, double lgamma_r) {
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
+double negative_binomial_pmf_fixed_r_real(int k, double r, double p) {
+    if (k < 0) {
+        return 0.0;
+    }
+
+    const double log_p = std::log(p);
+    const double log_1_minus_p = std::log(1.0 - p);
+
+    // TODO: This can be optimised using lgamma_r...later
+
+    double log_comb = std::lgamma(k + r) - std::lgamma(r) - std::lgamma(k + 1);
+
+    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+}
+
+double negative_binomial_pmf_2(int k, double r, double m)
+{
+    // m : mean
+    // r : concentration
+    //
+    // TODO: Reverse args like Numpyro NegativeBinomial2
+
+    double p = prob(m, r);
+
+    return negative_binomial_pmf_fixed_r_real(k, r, p);
+}
+
+std::vector<double> negative_binomial_pmf_2_vec(std::vector<int> k, double r, double m)
+{
+    // m : mean
+    // r : concentration
+    //
+    // TODO: Reverse args like Numpyro NegativeBinomial2
+
+    std::vector<double> results(k.size());
+
+    double p = prob(m, r);
+
+    for (int i = 0; i < k.size(); ++i) {
+        results[i] = negative_binomial_pmf_fixed_r_real(k[i], r, p);
+    }
+
+    return results;
+}
+
 std::vector<double> negative_binomial_pmf_vec(std::vector<int> k, int r, double p)
 {
     double lgamma_r = precompute_lgamma_r(r);
@@ -126,7 +187,7 @@ std::vector<double> negative_binomial_pmf_vec(std::vector<int> k, int r, double 
     return results;
 }
 
-float negative_binomial_pmf_lut(int k, int r, float p) {
+double negative_binomial_pmf_lut(int k, int r, double p) {
 
     // With k, r LUT (with GCC!)
 
@@ -144,7 +205,7 @@ float negative_binomial_pmf_lut(int k, int r, float p) {
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
-float negative_binomial_pmf_base(int k, int r, float p) {
+double negative_binomial_pmf_base(int k, int r, double p) {
 
     // The no optimisations version
 

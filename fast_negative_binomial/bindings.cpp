@@ -1,3 +1,5 @@
+#include <vector>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -8,7 +10,9 @@ namespace py = pybind11;
 PYBIND11_MODULE(fast_negative_binomial, m) {
     m.doc() = "Python bindings for Negative Binomial PMF";
 
-    m.def("negative_binomial", &negative_binomial_pmf_base,
+    // Overload all of these
+
+    m.def("negative_binomial", py::overload_cast<int, int, double>(&negative_binomial_pmf_base),
           py::arg("k"), py::arg("r"), py::arg("p"),
           "Compute the Negative Binomial PMF.\n\n"
           "Parameters:\n"
@@ -18,7 +22,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
           "Returns:\n"
           "    float: The PMF value.");
 
-    m.def("negative_binomial_vec", &negative_binomial_pmf_vec,
+    m.def("negative_binomial", py::overload_cast<std::vector<int>, int, double>(&negative_binomial_pmf_vec),
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
@@ -27,6 +31,40 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 k (List[int]): Number of failures for each case.
                 r (int): Number of successes.
                 p (float): Probability of success on an individual trial.
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    // Numpyro calls this the NegativeBinomial2 so we will too.
+    // This is in terms of 'mean and concentration (r)', and is generalised
+    // such that r is real
+
+    // Overload the vector form of these also.
+
+    m.def("negative_binomial2", py::overload_cast<int, double, double>(&negative_binomial_pmf_2),
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (int): Observation
+                r (float): Concentration of distribution
+                p (float): Mean of distribution
+
+            Returns:
+                float: The PMF values.
+        )pbdoc");
+
+    m.def("negative_binomial2", py::overload_cast<std::vector<int>, double, double>(&negative_binomial_pmf_2_vec),
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Observations
+                r (float): Concentration of distribution
+                p (float): Mean of distribution
 
             Returns:
                 List[float]: The PMF values.
