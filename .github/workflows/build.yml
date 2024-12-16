@@ -75,24 +75,6 @@ jobs:
           artifactContentType: application/gzip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Create release
-      #   uses: actions/create-release@v1
-      #   id: create_release
-      #   with:
-      #     draft: false
-      #     prerelease: false
-      #     release_name: ${{ github.ref }}
-      #     tag_name: ${{ github.ref }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Upload release artifact
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: dist/*
-      #     asset_content_type: application/gzip
 
   # publish:
   #   needs: [build_wheels]
