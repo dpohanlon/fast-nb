@@ -27,13 +27,13 @@ add_subdirectory(extern/pybind11)
 find_package(Threads REQUIRED)
 
 # Create a library for the core functionality
-add_library(fast_nb_lib STATIC src/fast_nb.cpp)
+add_library(fast_nb_lib STATIC fast_negative_binomial/fast_nb.cpp)
 
 # Specify include directories for the library
-target_include_directories(fast_nb_lib PUBLIC src)
+target_include_directories(fast_nb_lib PUBLIC fast_negative_binomial)
 
 # Add executable target
-add_executable(fast_nb src/main.cpp)
+add_executable(fast_nb fast_negative_binomial/main.cpp)
 
 # Link the executable with the core library and Threads
 target_link_libraries(fast_nb PRIVATE fast_nb_lib Threads::Threads)
@@ -45,7 +45,7 @@ if(ENABLE_BENCHMARK)
 endif()
 
 # Create the Python module using Pybind11
-pybind11_add_module(fast_negative_binomial src/bindings.cpp)
+pybind11_add_module(fast_negative_binomial fast_negative_binomial/bindings.cpp)
 
 # Link the Python module with the core library
 target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib)
@@ -67,3 +67,6 @@ if(NOT APPLE)
         target_link_libraries(fast_nb PRIVATE OpenMP::OpenMP_CXX)
     endif()
 endif()
+
+install(TARGETS fast_negative_binomial
+        LIBRARY DESTINATION fast_negative_binomial)
