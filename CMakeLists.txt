@@ -59,6 +59,18 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
 endif()
 
+# Set compiler flags based on the environment - maybe we can be a bit less strict
+# for Apple silicon?
+if(DEFINED ENV{GITHUB_ACTIONS} AND "$ENV{GITHUB_ACTIONS}" STREQUAL "true")
+    message(STATUS "Building on GitHub Actions: Using no arch specific flags")
+    target_compile_options(fast_nb_lib PRIVATE -O3 -ffast-math)
+    target_compile_options(fast_nb PRIVATE -O3 -ffast-math)
+else()
+    message(STATUS "Building locally: Using -march=native")
+    target_compile_options(fast_nb_lib PRIVATE -O3 -march=native -ffast-math)
+    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
+endif()
+
 # Ensure OpenMP is not enforced on Apple Silicon
 if(NOT APPLE)
     find_package(OpenMP)
