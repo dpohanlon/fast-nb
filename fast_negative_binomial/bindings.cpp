@@ -12,7 +12,10 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     // Overload all of these
 
-    m.def("negative_binomial", py::overload_cast<int, int, double>(&negative_binomial_pmf_base),
+    m.def("negative_binomial",
+          [](int k, int r, double p) -> double {
+              return nb_base<int>(k, r, p);
+          },
           py::arg("k"), py::arg("r"), py::arg("p"),
           "Compute the Negative Binomial PMF.\n\n"
           "Parameters:\n"
@@ -22,7 +25,10 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
           "Returns:\n"
           "    float: The PMF value.");
 
-    m.def("negative_binomial", py::overload_cast<std::vector<int>, int, double>(&negative_binomial_pmf_vec),
+    m.def("negative_binomial",
+        [](std::vector<int> k, int r, double p) -> std::vector<double> {
+        return nb_base_vec<int>(k, r, p);
+    },
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
@@ -42,7 +48,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     // Overload the vector form of these also.
 
-    m.def("negative_binomial2", py::overload_cast<int, double, double>(&negative_binomial_pmf_2),
+    m.def("negative_binomial2", py::overload_cast<int, double, double>(&nb2_base),
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
@@ -56,7 +62,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 float: The PMF values.
         )pbdoc");
 
-    m.def("negative_binomial2", py::overload_cast<std::vector<int>, double, double>(&negative_binomial_pmf_2_vec),
+    m.def("negative_binomial2", py::overload_cast<std::vector<int>, double, double>(&nb2_base_vec),
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.

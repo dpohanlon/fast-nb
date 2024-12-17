@@ -20,10 +20,10 @@ void test_accuracy(double tolerance, int max_k, const std::vector<int>& r_values
     std::map<int, std::vector<std::tuple<int, double, double>>> divergences;
 
     for (int r : r_values) {
-        double lgamma_r = precompute_lgamma_r(r);
+        double lgamma_r = std::lgamma(r);
         for (double p : p_values) {
             for (int k = 0; k <= max_k; ++k) {
-                double base_value = negative_binomial_pmf_base(k, r, p);
+                double base_value = nb_base(k, r, p);
                 // double optimized_value = negative_binomial_pmf_optimized(k, r, p, lgamma_r);
                 double optimized_value = negative_binomial_pmf_stirling(k, r, p);
                 double diff = std::abs(base_value - optimized_value);
