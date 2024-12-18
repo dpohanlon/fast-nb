@@ -54,12 +54,13 @@ constexpr double compute_log_comb(int k, int r, double lgamma_r) {
     if (k <= MAX_K && r <= MAX_R) {
         return LOG_COMB_TABLE[k][r];
     } else {
-        return std::lgamma(k + r) - lgamma_r - std::lgamma(k + 1);
+        // return std::lgamma(k + r) - lgamma_r - std::lgamma(k + 1);
+        return compute_log_comb_opt(k, r, lgamma_r);
     }
 
 }
 
-double compute_log_comb(int k, int r, double lgamma_r) {
+double compute_log_comb_opt(int k, int r, double lgamma_r) {
     double log_comb = 0.0;
 
     // Sum log(k + 1) to log(k + r - 1)
