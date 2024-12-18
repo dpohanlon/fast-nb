@@ -23,7 +23,7 @@ static void BM_NegativeBinomialPMF(benchmark::State& state) {
     for (auto _ : state) {
         std::vector<float> results(k_vals.size());
         for (size_t i = 0; i < k_vals.size(); ++i) {
-            results[i] = negative_binomial_pmf_base(k_vals[i], r, p);
+            results[i] = nb_base(k_vals[i], r, p);
             // results[i] = negative_binomial_pmf_lut(k_vals[i], r, p);
             // results[i] = negative_binomial_pmf_optimized(k_vals[i], r, p, lgamma_r);
         }

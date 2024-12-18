@@ -1,5 +1,5 @@
 # CMakeLists.txt for building and linking Google Benchmark and Pybind11
-cmake_minimum_required(VERSION 3.4...3.18)
+cmake_minimum_required(VERSION 3.5...3.18)
 project(FastNB LANGUAGES CXX)
 
 # Set C++ standard
@@ -26,6 +26,8 @@ add_subdirectory(extern/pybind11)
 # Find Threads
 find_package(Threads REQUIRED)
 
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+
 # Create a library for the core functionality
 add_library(fast_nb_lib STATIC fast_negative_binomial/fast_nb.cpp)
 
@@ -43,6 +45,9 @@ if(ENABLE_BENCHMARK)
     target_link_libraries(fast_nb PRIVATE benchmark::benchmark)
     target_compile_definitions(fast_nb PRIVATE ENABLE_BENCHMARK=1)
 endif()
+
+target_link_libraries(fast_nb PUBLIC Eigen3::Eigen)
+target_link_libraries(fast_nb_lib PUBLIC Eigen3::Eigen)
 
 # Create the Python module using Pybind11
 pybind11_add_module(fast_negative_binomial fast_negative_binomial/bindings.cpp)

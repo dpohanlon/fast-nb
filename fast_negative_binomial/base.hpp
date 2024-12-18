@@ -13,11 +13,14 @@
 
 #include <cmath>
 
+#include <Eigen/Dense>
+
 #include <utils.hpp>
 
 // Precompute log combinatorial coefficients for small values of k, r.
 // This is only constexpr in GCC, but will be for both in C++26
 #if defined(__GNUC__) && !defined(__clang__)
+    #include <omp.h>
     #include "log_comb_gcc.hpp"
 #else
     #include "log_comb.hpp"
@@ -113,4 +116,18 @@ std::vector<double> nb2_base_vec(std::vector<int> k, double m, double r)
     double p = prob(m, r);
 
     return nb_base_vec(k, r, p);
+}
+
+template<typename T>
+Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k, T r, double p)
+{
+    double lgamma_r = std::lgamma(static_cast<double>(r));
+    Eigen::VectorXd results(k.size());
+
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < k.size(); ++i) {
+        results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+    }
+
+    return results;
 }

@@ -2,6 +2,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/eigen.h>
 
 #include "fast_nb.cpp"
 
@@ -28,6 +29,23 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
     m.def("negative_binomial",
         [](std::vector<int> k, int r, double p) -> std::vector<double> {
         return nb_base_vec<int>(k, r, p);
+    },
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Number of failures for each case.
+                r (int): Number of successes.
+                p (float): Probability of success on an individual trial.
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    m.def("negative_binomial_eigen",
+        [](Eigen::VectorXi k, int r, double p) -> Eigen::VectorXd {
+        return nb_base_vec_eigen<int>(k, r, p);
     },
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
