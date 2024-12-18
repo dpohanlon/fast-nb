@@ -45,6 +45,20 @@ constexpr double compute_log_comb(int k, int r) {
 
 }
 
+double compute_log_comb_opt(int k, int r, double lgamma_r) {
+    double log_comb = 0.0;
+
+    // Sum log(k + 1) to log(k + r - 1)
+    for(int i = 1; i < r; ++i){
+        log_comb += std::log(static_cast<double>(k) + static_cast<double>(i));
+    }
+
+    // Subtract precomputed lgamma(r)
+    log_comb -= lgamma_r;
+
+    return log_comb;
+}
+
 constexpr double compute_log_comb(int k, int r, double lgamma_r) {
     // Ensure that k and r are non-negative and r > 0
     if(k < 0 || r <= 0){
@@ -58,20 +72,6 @@ constexpr double compute_log_comb(int k, int r, double lgamma_r) {
         return compute_log_comb_opt(k, r, lgamma_r);
     }
 
-}
-
-double compute_log_comb_opt(int k, int r, double lgamma_r) {
-    double log_comb = 0.0;
-
-    // Sum log(k + 1) to log(k + r - 1)
-    for(int i = 1; i < r; ++i){
-        log_comb += std::log(static_cast<double>(k) + static_cast<double>(i));
-    }
-
-    // Subtract precomputed lgamma(r)
-    log_comb -= lgamma_r;
-
-    return log_comb;
 }
 
 double compute_log_comb(int k, double r) {
