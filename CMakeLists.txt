@@ -55,15 +55,6 @@ pybind11_add_module(fast_negative_binomial fast_negative_binomial/bindings.cpp)
 # Link the Python module with the core library
 target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib)
 
-# Set optimization flags for performance
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(fast_nb_lib PRIVATE -O3 -march=native -ffast-math)
-    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_compile_options(fast_nb_lib PRIVATE -O3 -march=native -ffast-math)
-    target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
-endif()
-
 # Set compiler flags based on the environment - maybe we can be a bit less strict
 # for Apple silicon?
 if(DEFINED ENV{GITHUB_ACTIONS} AND "$ENV{GITHUB_ACTIONS}" STREQUAL "true")
@@ -82,6 +73,7 @@ if(NOT APPLE)
     if(OpenMP_CXX_FOUND)
         target_link_libraries(fast_nb_lib PRIVATE OpenMP::OpenMP_CXX)
         target_link_libraries(fast_nb PRIVATE OpenMP::OpenMP_CXX)
+        target_link_libraries(fast_negative_binomial PRIVATE OpenMP::OpenMP_CXX)
     endif()
 endif()
 
