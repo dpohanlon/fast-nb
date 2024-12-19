@@ -15,6 +15,8 @@
 
 #include <Eigen/Dense>
 
+#include <boost/sort/sort.hpp>
+
 #include <utils.hpp>
 
 // Precompute log combinatorial coefficients for small values of k, r.
@@ -99,6 +101,9 @@ std::vector<double> nb_base_vec(std::vector<int> k, T r, double p)
 {
     double lgamma_r = std::lgamma(static_cast<double>(r));
 
+    // std::sort(k.begin(), k.end());
+    boost::sort::parallel_stable_sort(k.begin(), k.end());
+
     std::vector<double> results(k.size());
 
     for (int i = 0; i < k.size(); ++i) {
@@ -127,6 +132,79 @@ Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k, T r, double p)
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
         results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+    }
+
+    return results;
+}
+
+// Define the fixed block size (tune this based on your needs)
+constexpr int BLOCK_SIZE = 1024;
+
+// Define fixed-size Eigen vector types for integers and doubles
+using FixedVectorXi = Eigen::Matrix<int, BLOCK_SIZE, 1>;
+using FixedVectorXd = Eigen::Matrix<double, BLOCK_SIZE, 1>;
+
+// Template function to compute the negative binomial PMF using Eigen
+template<typename T>
+Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k, T r, double p) {
+    // Precompute lgamma(r) since it's constant across all computations
+    const double lgamma_r = std::lgamma(static_cast<double>(r));
+
+    // Initialize the result vector with the same size as k
+    Eigen::VectorXd results(k.size());
+
+    // Calculate the number of full blocks and the number of remaining elements
+    const int num_blocks = static_cast<int>(k.size()) / BLOCK_SIZE;
+    const int remaining = static_cast<int>(k.size()) % BLOCK_SIZE;
+
+    // Parallelize the processing of full blocks using OpenMP
+    #pragma omp parallel for schedule(static)
+    for(int block = 0; block < num_blocks; ++block) {
+        // Calculate the starting index for the current block
+        const int start = block * BLOCK_SIZE;
+
+        // Map the current block of k to a fixed-size Eigen vector
+        // Ensure that k has enough elements to map; this is safe since we're iterating over full blocks
+        Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
+
+        // Initialize a fixed-size Eigen vector to store the results of the current block
+        FixedVectorXd res_block;
+
+        // Compute nb_base_fixed_r for each element in the block
+        for(int i = 0; i < BLOCK_SIZE; ++i) {
+
+            const double log_p = std::log(p);
+            const double log_1_minus_p = std::log(1.0 - p);
+
+            double log_comb = std::lgamma(k_block[i] + r) - lgamma_r - std::lgamma(k_block[i] + 1);
+
+            res_block[i] = std::exp(log_comb + k_block[i] * log_1_minus_p + r * log_p);
+
+            // res_block[i] = nb_base_fixed_r(k_block[i], r, p, lgamma_r);
+        }
+
+        // Assign the computed results back to the corresponding segment in the results vector
+        Eigen::Map<FixedVectorXd>(results.data() + start) = res_block;
+    }
+
+    // Handle any remaining elements that don't fit into a full block
+    if(remaining > 0) {
+        // Calculate the starting index for the remaining elements
+        const int start = num_blocks * BLOCK_SIZE;
+
+        // Extract the remaining segment from k
+        Eigen::VectorXi k_remaining = k.segment(start, remaining);
+
+        // Initialize a dynamic-size Eigen vector to store the results of the remaining elements
+        Eigen::VectorXd res_remaining(remaining);
+
+        // Compute nb_base_fixed_r for each remaining element
+        for(int i = 0; i < remaining; ++i) {
+            res_remaining[i] = nb_base_fixed_r(k_remaining[i], r, p, lgamma_r);
+        }
+
+        // Assign the computed results back to the corresponding segment in the results vector
+        results.segment(start, remaining) = res_remaining;
     }
 
     return results;
