@@ -151,7 +151,8 @@ double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCached
 
     double log_comb = lgamma_kr.lgamma(k + r) - lgamma_r - lgamma_k1.lgamma(k + 1);
 
-    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+    // return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+    return log_comb + k * log_1_minus_p + r * log_p;
 }
 
 // I can probably template specialise these for vector or scalar, but not sure if it's worth it
@@ -168,6 +169,12 @@ std::vector<double> nb_base_vec(std::vector<int> k, T r, double p)
 
     for (int i = 0; i < k.size(); ++i) {
         results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+    }
+
+    // Even though this has a second loop and more memory accesses, it's SIMD and cache (?) friendlier than doing the exp within the call (exp is slow and these values are often the same)
+
+    for (int i = 0; i < k.size(); ++i) {
+        results[i] = std::exp(results[i]);
     }
 
     return results;
