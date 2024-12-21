@@ -16,6 +16,7 @@
 #include <Eigen/Dense>
 
 #include <boost/sort/sort.hpp>
+#include <boost/sort/spreadsort/spreadsort.hpp>
 
 #include <utils.hpp>
 
@@ -27,6 +28,51 @@
 #else
     #include "log_comb.hpp"
 #endif
+
+class LgammaCachedSorted {
+public:
+    LgammaCachedSorted() : current_k_(0), current_lgamma_(0.0), relative_cost_(20) {}
+
+    // Compute lgamma(x) with caching for sorted x
+    double lgamma(int x) {
+        if (x < 1) {
+            std::cerr << "Error: x must be positive integer." << std::endl;
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
+        if (x == current_k_) {
+            return current_lgamma_;
+        } else if (x > current_k_ + relative_cost_) {
+            current_lgamma_ = std::lgamma(static_cast<double>(x));
+            current_k_ = x;
+
+            return current_lgamma_;
+
+        } else {
+
+            // Compute iteratively from current_k_ to x
+            while (current_k_ < x) {
+                if (current_k_ == 0) {
+                    // Initialize lgamma(1) = 0
+                    current_k_ = 1;
+                    current_lgamma_ = 0.0;
+                } else {
+                    // Use the identity: lgamma(x + 1) = log(x) + lgamma(x)
+                    current_lgamma_ += std::log(static_cast<double>(current_k_));
+                    current_k_++;
+                }
+            }
+
+            return current_lgamma_;
+
+        }
+    }
+
+private:
+    int current_k_;        // The current largest k computed
+    double current_lgamma_; // The current lgamma(k) value
+    int relative_cost_;
+};
 
 // The 'lossless' optimisations versions
 
@@ -94,6 +140,20 @@ double nb_base_fixed_r(int k, int r, double p, double lgamma_r) {
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
+double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCachedSorted & lgamma_kr, LgammaCachedSorted & lgamma_k1) {
+
+    if (k < 0) {
+        return 0.0;
+    }
+
+    const double log_p = std::log(p);
+    const double log_1_minus_p = std::log(1.0 - p);
+
+    double log_comb = lgamma_kr.lgamma(k + r) - lgamma_r - lgamma_k1.lgamma(k + 1);
+
+    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+}
+
 // I can probably template specialise these for vector or scalar, but not sure if it's worth it
 
 template<typename T>
@@ -102,7 +162,7 @@ std::vector<double> nb_base_vec(std::vector<int> k, T r, double p)
     double lgamma_r = std::lgamma(static_cast<double>(r));
 
     // std::sort(k.begin(), k.end());
-    boost::sort::parallel_stable_sort(k.begin(), k.end());
+    // boost::sort::parallel_stable_sort(k.begin(), k.end());
 
     std::vector<double> results(k.size());
 
@@ -132,6 +192,27 @@ Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k, T r, double p)
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
         results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+    }
+
+    return results;
+}
+
+template<typename T>
+Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
+{
+    double lgamma_r = std::lgamma(static_cast<double>(r));
+    Eigen::VectorXd results(k.size());
+
+    // std::sort(k.begin(), k.end());
+    // boost::sort::parallel_stable_sort(k.begin(), k.end());
+    boost::sort::spreadsort::spreadsort(k.begin(), k.end());
+
+    LgammaCachedSorted lgamma_kr;
+    LgammaCachedSorted lgamma_k1;
+
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < k.size(); ++i) {
+        results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
     }
 
     return results;

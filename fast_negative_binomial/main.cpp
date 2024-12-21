@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <numeric>
+#include <random>
 #include <Eigen/Dense>
 
 #ifdef ENABLE_BENCHMARK
@@ -14,50 +15,74 @@
 
 #ifdef ENABLE_BENCHMARK
 
-static void BM_NegativeBinomialPMF(benchmark::State& state) {
-    int r = 100;
-    float p = 0.7;
-    std::vector<int> k_vals(state.range(0));
-    std::iota(k_vals.begin(), k_vals.end(), 0);
+// --benchmark_time_unit=us
 
-    double lgamma_r = std::lgamma(r);
+std::vector<int> get_poisson(int n) {
 
-    for (auto _ : state) {
+    std::vector<int> k_vals;
+    k_vals.reserve(n);
 
-        std::vector<double> results = nb_base_vec(k_vals, r, p);
+    double lambda = 20;
 
-        benchmark::DoNotOptimize(results);
+    static std::mt19937 gen(42);
+    std::poisson_distribution<int> poisson_dist(lambda);
+
+    // Generate Poisson-distributed k_vals
+    for (int i = 0; i < n; ++i) {
+        k_vals.emplace_back(poisson_dist(gen));
     }
-    state.SetComplexityN(state.range(0));
+
+    return k_vals;
 }
 
 // static void BM_NegativeBinomialPMF(benchmark::State& state) {
 //     int r = 100;
 //     float p = 0.7;
-//     // std::vector<int> k_vals(state.range(0));
-//     // std::iota(k_vals.begin(), k_vals.end(), 0);
 
-//     // auto k_vals_eigen = stdVectorToEigenCopy(k_vals);
+//     int num_samples = state.range(0);
 
-//     Eigen::VectorXi k = Eigen::VectorXi::LinSpaced(state.range(0), 0, state.range(0));
+//     std::vector<int> k_vals = get_poisson(num_samples);
 
-//     // float lgamma_r = precompute_lgamma_r(r);
+//     double lgamma_r = std::lgamma(r);
 
 //     for (auto _ : state) {
-//         // std::vector<float> results(k_vals.size());
 
-//         // for (size_t i = 0; i < k_vals.size(); ++i) {
-//         //     results[i] = nb_base(k_vals[i], r, p);
-//         //     // results[i] = negative_binomial_pmf_lut(k_vals[i], r, p);
-//         //     // results[i] = negative_binomial_pmf_optimized(k_vals[i], r, p, lgamma_r);
-//         // }
-
-//         Eigen::VectorXd results = nb_base_vec_eigen_blocks(k, r, p);
+//         std::vector<double> results = nb_base_vec(k_vals, r, p);
 
 //         benchmark::DoNotOptimize(results);
 //     }
 //     state.SetComplexityN(state.range(0));
 // }
+
+static void BM_NegativeBinomialPMF(benchmark::State& state) {
+    int r = 10;
+    float p = 0.7;
+    // std::vector<int> k_vals(state.range(0));
+    // std::iota(k_vals.begin(), k_vals.end(), 0);
+
+    std::vector<int> k_vals = get_poisson(state.range(0));
+
+    double lgamma_r = std::lgamma(r);
+
+    auto k_vals_eigen = stdVectorToEigenCopy(k_vals);
+
+    // Eigen::VectorXi k = Eigen::VectorXi::LinSpaced(state.range(0), 0, state.range(0));
+
+    for (auto _ : state) {
+        // std::vector<float> results(k_vals.size());
+
+        // for (size_t i = 0; i < k_vals.size(); ++i) {
+        //     results[i] = nb_base(k_vals[i], r, p);
+        //     // results[i] = negative_binomial_pmf_lut(k_vals[i], r, p);
+        //     // results[i] = negative_binomial_pmf_optimized(k_vals[i], r, p, lgamma_r);
+        // }
+
+        Eigen::VectorXd results = nb_base_vec_eigen_sorted(k_vals_eigen, r, p);
+
+        benchmark::DoNotOptimize(results);
+    }
+    state.SetComplexityN(state.range(0));
+}
 
 // Blocks do help a bit
 // static void BM_NegativeBinomialPMF(benchmark::State& state) {
@@ -75,7 +100,7 @@ static void BM_NegativeBinomialPMF(benchmark::State& state) {
 //     state.SetComplexityN(state.range(0));
 // }
 
-BENCHMARK(BM_NegativeBinomialPMF)->Range(16, 1 << 20)->Complexity();
+BENCHMARK(BM_NegativeBinomialPMF)->Range(16, 1 << 22)->Complexity();
 
 BENCHMARK_MAIN();
 
