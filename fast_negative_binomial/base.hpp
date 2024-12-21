@@ -29,9 +29,11 @@
     #include "log_comb.hpp"
 #endif
 
+// Is this actually doing anything?
+
 class LgammaCachedSorted {
 public:
-    LgammaCachedSorted() : current_k_(0), current_lgamma_(0.0), relative_cost_(20) {}
+    LgammaCachedSorted() : current_k_(0), current_lgamma_(0.0), relative_cost_(10) {}
 
     // Compute lgamma(x) with caching for sorted x
     double lgamma(int x) {
@@ -151,8 +153,7 @@ double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCached
 
     double log_comb = lgamma_kr.lgamma(k + r) - lgamma_r - lgamma_k1.lgamma(k + 1);
 
-    // return std::exp(log_comb + k * log_1_minus_p + r * log_p);
-    return log_comb + k * log_1_minus_p + r * log_p;
+    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
 // I can probably template specialise these for vector or scalar, but not sure if it's worth it
@@ -171,12 +172,6 @@ std::vector<double> nb_base_vec(std::vector<int> k, T r, double p)
         results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
     }
 
-    // Even though this has a second loop and more memory accesses, it's SIMD and cache (?) friendlier than doing the exp within the call (exp is slow and these values are often the same)
-
-    for (int i = 0; i < k.size(); ++i) {
-        results[i] = std::exp(results[i]);
-    }
-
     return results;
 }
 
@@ -191,18 +186,31 @@ std::vector<double> nb2_base_vec(std::vector<int> k, double m, double r)
 }
 
 template<typename T>
-Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k, T r, double p)
+Eigen::VectorXd nb_base_vec_eigen(Eigen::VectorXi &k, T r, double p)
 {
     double lgamma_r = std::lgamma(static_cast<double>(r));
     Eigen::VectorXd results(k.size());
 
+    boost::sort::spreadsort::spreadsort(k.begin(), k.end());
+
+    int k_prev = -1;
+
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
-        results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+
+        if (k[i] == k_prev) {
+            results[i] = results[i - 1];
+        }else {
+            results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+        }
+
+        k_prev = k[i];
     }
 
     return results;
 }
+
+// Maybe having a cache rather than sorting is a better idea anyway? It can persist between calls with same k, different r, p
 
 template<typename T>
 Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
@@ -211,15 +219,22 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
     Eigen::VectorXd results(k.size());
 
     // std::sort(k.begin(), k.end());
-    // boost::sort::parallel_stable_sort(k.begin(), k.end());
-    boost::sort::spreadsort::spreadsort(k.begin(), k.end());
+    // boost::sort::parallel_stable_sort(k.begin(), k.end()); // Slower for smaller data
+    boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
 
     LgammaCachedSorted lgamma_kr;
     LgammaCachedSorted lgamma_k1;
 
+    int k_prev = -1;
+
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
-        results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
+        if (k[i] == k_prev) {
+            results[i] = results[i - 1];
+        } else {
+            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
+        }
+        k_prev = k[i];
     }
 
     return results;
