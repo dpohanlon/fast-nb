@@ -123,7 +123,7 @@ public:
     }
 
 private:
-    std::map<int, double> lgamma_cache_;
+    std::unordered_map<int, double> lgamma_cache_;
     int max_k_;
     int relative_cost_;
 };
@@ -275,7 +275,7 @@ Eigen::VectorXd nb_base_vec_eigen(Eigen::VectorXi &k, T r, double p)
 
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
-        }else {
+        } else {
             results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
         }
 
@@ -297,10 +297,10 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
     // boost::sort::parallel_stable_sort(k.begin(), k.end()); // Slower for smaller data
     boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
 
-    // LgammaCachedSorted lgamma_kr;
-    // LgammaCachedSorted lgamma_k1;
+    LgammaCachedSorted lgamma_kr;
+    LgammaCachedSorted lgamma_k1;
 
-    LgammaCacheMap lgamma_cache;
+    // LgammaCacheMap lgamma_cache;
 
     int k_prev = -1;
 
@@ -314,8 +314,8 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
         } else {
-            // results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
-            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_cache);
+            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
+            // results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_cache);
         }
         k_prev = k[i];
     }
@@ -324,7 +324,7 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
 }
 
 // Define the fixed block size (tune this based on your needs)
-constexpr int BLOCK_SIZE = 1024;
+constexpr int BLOCK_SIZE = 2048;
 
 // Define fixed-size Eigen vector types for integers and doubles
 using FixedVectorXi = Eigen::Matrix<int, BLOCK_SIZE, 1>;
@@ -332,7 +332,7 @@ using FixedVectorXd = Eigen::Matrix<double, BLOCK_SIZE, 1>;
 
 // Template function to compute the negative binomial PMF using Eigen
 template<typename T>
-Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k, T r, double p) {
+Eigen::VectorXd nb_base_vec_eigen_blocks(Eigen::VectorXi &k, T r, double p) {
     // Precompute lgamma(r) since it's constant across all computations
     const double lgamma_r = std::lgamma(static_cast<double>(r));
 
@@ -342,6 +342,13 @@ Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k, T r, double p
     // Calculate the number of full blocks and the number of remaining elements
     const int num_blocks = static_cast<int>(k.size()) / BLOCK_SIZE;
     const int remaining = static_cast<int>(k.size()) % BLOCK_SIZE;
+
+    // std::sort(k.begin(), k.end());
+    // boost::sort::parallel_stable_sort(k.begin(), k.end()); // Slower for smaller data
+    boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
+
+    const double log_p = std::log(p);
+    const double log_1_minus_p = std::log(1.0 - p);
 
     // Parallelize the processing of full blocks using OpenMP
     #pragma omp parallel for schedule(static)
@@ -359,14 +366,18 @@ Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k, T r, double p
         // Compute nb_base_fixed_r for each element in the block
         for(int i = 0; i < BLOCK_SIZE; ++i) {
 
-            const double log_p = std::log(p);
-            const double log_1_minus_p = std::log(1.0 - p);
+            if ((i > 0) && (k[i - 1] == k[i])) {
+                res_block[i] = res_block[i - 1];
+                continue;
+            } else {
 
-            double log_comb = std::lgamma(k_block[i] + r) - lgamma_r - std::lgamma(k_block[i] + 1);
+                double log_comb = std::lgamma(k_block[i] + r) - lgamma_r - std::lgamma(k_block[i] + 1);
 
-            res_block[i] = std::exp(log_comb + k_block[i] * log_1_minus_p + r * log_p);
+                res_block[i] = std::exp(log_comb + k_block[i] * log_1_minus_p + r * log_p);
 
-            // res_block[i] = nb_base_fixed_r(k_block[i], r, p, lgamma_r);
+                // res_block[i] = nb_base_fixed_r(k_block[i], r, p, lgamma_r);
+
+            }
         }
 
         // Assign the computed results back to the corresponding segment in the results vector
@@ -386,7 +397,14 @@ Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k, T r, double p
 
         // Compute nb_base_fixed_r for each remaining element
         for(int i = 0; i < remaining; ++i) {
-            res_remaining[i] = nb_base_fixed_r(k_remaining[i], r, p, lgamma_r);
+
+            if ((i > 0) && (k_remaining[i - 1] == k_remaining[i])) {
+                res_remaining[i] = res_remaining[i - 1];
+                continue;
+            } else {
+
+                res_remaining[i] = nb_base_fixed_r(k_remaining[i], r, p, lgamma_r);
+            }
         }
 
         // Assign the computed results back to the corresponding segment in the results vector

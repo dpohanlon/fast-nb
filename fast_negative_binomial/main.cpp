@@ -77,7 +77,7 @@ static void BM_NegativeBinomialPMF(benchmark::State& state) {
         //     // results[i] = negative_binomial_pmf_optimized(k_vals[i], r, p, lgamma_r);
         // }
 
-        Eigen::VectorXd results = nb_base_vec_eigen_sorted(k_vals_eigen, r, p);
+        Eigen::VectorXd results = nb_base_vec_eigen_blocks(k_vals_eigen, r, p);
 
         benchmark::DoNotOptimize(results);
     }
