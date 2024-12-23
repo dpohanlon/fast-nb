@@ -13,16 +13,12 @@
 #include "fast_nb.cpp"
 #include "test.cpp"
 
-#ifdef ENABLE_BENCHMARK
-
-// --benchmark_time_unit=us
-
 std::vector<int> get_poisson(int n) {
 
     std::vector<int> k_vals;
     k_vals.reserve(n);
 
-    double lambda = 20;
+    double lambda = 100;
 
     static std::mt19937 gen(42);
     std::poisson_distribution<int> poisson_dist(lambda);
@@ -34,6 +30,10 @@ std::vector<int> get_poisson(int n) {
 
     return k_vals;
 }
+
+#ifdef ENABLE_BENCHMARK
+
+// --benchmark_time_unit=us
 
 // static void BM_NegativeBinomialPMF(benchmark::State& state) {
 //     int r = 100;
@@ -55,7 +55,7 @@ std::vector<int> get_poisson(int n) {
 // }
 
 static void BM_NegativeBinomialPMF(benchmark::State& state) {
-    int r = 10;
+    int r = 50;
     float p = 0.7;
     // std::vector<int> k_vals(state.range(0));
     // std::iota(k_vals.begin(), k_vals.end(), 0);
@@ -106,21 +106,41 @@ BENCHMARK_MAIN();
 
 #else
 
+// int main() {
+//     // Tolerance for comparison
+//     double tolerance = 1e-6;
+
+//     // Maximum value of k (number of failures)
+//     int max_k = 100;
+
+//     // Set of r values (number of successes)
+//     std::vector<int> r_values = {1, 5, 10, 20, 50, 100, 200, 500, 1000};
+
+//     // Set of p values (success probabilities)
+//     std::vector<double> p_values = {0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99};
+
+//     // Run the accuracy test
+//     test_accuracy(tolerance, max_k, r_values, p_values);
+
+//     return 0;
+// }
+
 int main() {
-    // Tolerance for comparison
-    double tolerance = 1e-6;
+    int r = 10;
+    float p = 0.7;
 
-    // Maximum value of k (number of failures)
-    int max_k = 100;
+    std::vector<int> k_vals = get_poisson(10);
 
-    // Set of r values (number of successes)
-    std::vector<int> r_values = {1, 5, 10, 20, 50, 100, 200, 500, 1000};
+    double lgamma_r = std::lgamma(r);
 
-    // Set of p values (success probabilities)
-    std::vector<double> p_values = {0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99};
+    auto k_vals_eigen = stdVectorToEigenCopy(k_vals);
 
-    // Run the accuracy test
-    test_accuracy(tolerance, max_k, r_values, p_values);
+    for (auto k : k_vals) {
+        std::cout << k << std::endl;
+    }
+    std:: cout << std::endl;
+
+    nb_base_vec_eigen_sorted(k_vals_eigen, r, p);
 
     return 0;
 }

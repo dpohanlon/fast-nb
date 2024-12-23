@@ -37,6 +37,11 @@ public:
 
     // Compute lgamma(x) with caching for sorted x
     double lgamma(int x) {
+
+        // std::cout << "current_k " << current_k_ << std::endl;
+        // std::cout << "current_lgamma_ " << current_lgamma_ << std::endl;
+        // std::cout << std::endl;
+
         if (x < 1) {
             std::cerr << "Error: x must be positive integer." << std::endl;
             return std::numeric_limits<double>::quiet_NaN();
@@ -73,6 +78,53 @@ public:
 private:
     int current_k_;        // The current largest k computed
     double current_lgamma_; // The current lgamma(k) value
+    int relative_cost_;
+};
+
+class LgammaCacheMap {
+public:
+    LgammaCacheMap() : max_k_(0), relative_cost_(10) {}
+
+    double lgamma(int x) {
+
+        if (x < 1) {
+            std::cerr << "Error: x must be positive integer." << std::endl;
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
+        if (x == max_k_) {
+            return lgamma_cache_[x];
+        } else if (x > max_k_ + relative_cost_) {
+            double lg = std::lgamma(static_cast<double>(x));
+
+            max_k_ = x;
+            lgamma_cache_[x] = lg;
+
+            return lg;
+
+        } else {
+
+            // Compute iteratively from current_k_ to x
+            while (max_k_ < x) {
+                if (max_k_ == 0) {
+                    // Initialize lgamma(1) = 0
+                    max_k_ = 1;
+                    lgamma_cache_[1] = 0.0;
+                } else {
+                    // Use the identity: lgamma(x + 1) = log(x) + lgamma(x)
+                    lgamma_cache_[max_k_ + 1] = lgamma_cache_[max_k_] + std::log(static_cast<double>(max_k_));
+                    max_k_++;
+                }
+            }
+
+            return lgamma_cache_[x];
+
+        }
+    }
+
+private:
+    std::map<int, double> lgamma_cache_;
+    int max_k_;
     int relative_cost_;
 };
 
@@ -151,7 +203,30 @@ double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCached
     const double log_p = std::log(p);
     const double log_1_minus_p = std::log(1.0 - p);
 
-    double log_comb = lgamma_kr.lgamma(k + r) - lgamma_r - lgamma_k1.lgamma(k + 1);
+    // std::cout << "lg_kr" << std::endl;
+    double lg_kr = lgamma_kr.lgamma(k + r);
+
+    // std::cout << "lg_k1" << std::endl;
+    double lg_k1 = lgamma_k1.lgamma(k + 1);
+
+    double log_comb = lg_kr - lgamma_r - lg_k1;
+
+    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
+}
+
+double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCacheMap & lgamma_cache) {
+
+    if (k < 0) {
+        return 0.0;
+    }
+
+    const double log_p = std::log(p);
+    const double log_1_minus_p = std::log(1.0 - p);
+
+    double lg_kr = lgamma_cache.lgamma(k + r);
+    double lg_k1 = lgamma_cache.lgamma(k + 1);
+
+    double log_comb = lg_kr - lgamma_r - lg_k1;
 
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
@@ -222,17 +297,25 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
     // boost::sort::parallel_stable_sort(k.begin(), k.end()); // Slower for smaller data
     boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
 
-    LgammaCachedSorted lgamma_kr;
-    LgammaCachedSorted lgamma_k1;
+    // LgammaCachedSorted lgamma_kr;
+    // LgammaCachedSorted lgamma_k1;
+
+    LgammaCacheMap lgamma_cache;
 
     int k_prev = -1;
+
+    // for (auto k_ : k) {
+    //     std::cout << k_ << std::endl;
+    // }
+    // std:: cout << std::endl;
 
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
         } else {
-            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
+            // results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
+            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_cache);
         }
         k_prev = k[i];
     }
