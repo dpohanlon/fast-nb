@@ -108,14 +108,11 @@ else()
     target_compile_options(fast_nb PRIVATE -O3 -march=native -ffast-math)
 endif()
 
-# Ensure OpenMP is not enforced on Apple Silicon
-if(NOT APPLE)
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(fast_nb_lib PRIVATE OpenMP::OpenMP_CXX)
-        target_link_libraries(fast_nb PRIVATE OpenMP::OpenMP_CXX)
-        target_link_libraries(fast_negative_binomial PRIVATE OpenMP::OpenMP_CXX)
-    endif()
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(fast_nb_lib PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(fast_nb PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(fast_negative_binomial PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 install(TARGETS fast_negative_binomial
