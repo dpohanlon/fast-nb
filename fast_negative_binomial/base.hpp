@@ -33,9 +33,9 @@
 
 // Is this actually doing anything?
 
-class LgammaCachedSorted {
+class LgammaCache {
 public:
-    LgammaCachedSorted() : current_k_(0), current_lgamma_(0.0), relative_cost_(10) {}
+    LgammaCache() : current_k_(0), current_lgamma_(0.0), relative_cost_(10) {}
 
     // Compute lgamma(x) with caching for sorted x
     double lgamma(int x) {
@@ -80,53 +80,6 @@ public:
 private:
     int current_k_;        // The current largest k computed
     double current_lgamma_; // The current lgamma(k) value
-    int relative_cost_;
-};
-
-class LgammaCacheMap {
-public:
-    LgammaCacheMap() : max_k_(0), relative_cost_(10) {}
-
-    double lgamma(int x) {
-
-        if (x < 1) {
-            std::cerr << "Error: x must be positive integer." << std::endl;
-            return std::numeric_limits<double>::quiet_NaN();
-        }
-
-        if (x == max_k_) {
-            return lgamma_cache_[x];
-        } else if (x > max_k_ + relative_cost_) {
-            double lg = std::lgamma(static_cast<double>(x));
-
-            max_k_ = x;
-            lgamma_cache_[x] = lg;
-
-            return lg;
-
-        } else {
-
-            // Compute iteratively from current_k_ to x
-            while (max_k_ < x) {
-                if (max_k_ == 0) {
-                    // Initialize lgamma(1) = 0
-                    max_k_ = 1;
-                    lgamma_cache_[1] = 0.0;
-                } else {
-                    // Use the identity: lgamma(x + 1) = log(x) + lgamma(x)
-                    lgamma_cache_[max_k_ + 1] = lgamma_cache_[max_k_] + std::log(static_cast<double>(max_k_));
-                    max_k_++;
-                }
-            }
-
-            return lgamma_cache_[x];
-
-        }
-    }
-
-private:
-    std::unordered_map<int, double> lgamma_cache_;
-    int max_k_;
     int relative_cost_;
 };
 
@@ -196,7 +149,7 @@ double nb_base_fixed_r(int k, int r, double p, double lgamma_r) {
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
-double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCachedSorted & lgamma_kr, LgammaCachedSorted & lgamma_k1) {
+double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCache & lgamma_kr, LgammaCache & lgamma_k1) {
 
     if (k < 0) {
         return 0.0;
@@ -210,23 +163,6 @@ double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCached
 
     // std::cout << "lg_k1" << std::endl;
     double lg_k1 = lgamma_k1.lgamma(k + 1);
-
-    double log_comb = lg_kr - lgamma_r - lg_k1;
-
-    return std::exp(log_comb + k * log_1_minus_p + r * log_p);
-}
-
-double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r, LgammaCacheMap & lgamma_cache) {
-
-    if (k < 0) {
-        return 0.0;
-    }
-
-    const double log_p = std::log(p);
-    const double log_1_minus_p = std::log(1.0 - p);
-
-    double lg_kr = lgamma_cache.lgamma(k + r);
-    double lg_k1 = lgamma_cache.lgamma(k + 1);
 
     double log_comb = lg_kr - lgamma_r - lg_k1;
 
@@ -268,41 +204,39 @@ Eigen::VectorXd nb_base_vec_eigen(Eigen::VectorXi &k, T r, double p)
     double lgamma_r = std::lgamma(static_cast<double>(r));
     Eigen::VectorXd results(k.size());
 
-    boost::sort::spreadsort::spreadsort(k.begin(), k.end());
+    boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
+
+    LgammaCache lgamma_kr;
+    LgammaCache lgamma_k1;
 
     int k_prev = -1;
 
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < k.size(); ++i) {
-
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
         } else {
-            results[i] = nb_base_fixed_r(k[i], r, p, lgamma_r);
+            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1);
         }
-
         k_prev = k[i];
     }
 
     return results;
 }
 
-// Maybe having a cache rather than sorting is a better idea anyway? It can persist between calls with same k, different r, p
-
+// Assumed sorted
 template<typename T>
 Eigen::VectorXd nb_base_vec_eigen_sorted(Eigen::VectorXi &k, T r, double p)
 {
     double lgamma_r = std::lgamma(static_cast<double>(r));
     Eigen::VectorXd results(k.size());
 
-    boost::sort::spreadsort::spreadsort(k.begin(), k.end()); // Faster for smaller data
-
-    LgammaCachedSorted lgamma_kr;
-    LgammaCachedSorted lgamma_k1;
+    LgammaCache lgamma_kr;
+    LgammaCache lgamma_k1;
 
     int k_prev = -1;
 
-    #pragma omp parallel for schedule(static)
+    // Not worth a parallel for here for small data size
     for (int i = 0; i < k.size(); ++i) {
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
@@ -338,53 +272,52 @@ Eigen::VectorXd nb_base_vec_eigen_blocks(Eigen::VectorXi &k, T r, double p) {
     const double log_p = std::log(p);
     const double log_1_minus_p = std::log(1.0 - p);
 
-    #pragma omp parallel for schedule(static)
-    for(int block = 0; block < num_blocks; ++block) {
-        const int start = block * BLOCK_SIZE;
+    // Only spool up threads if we have blocks to loop over
+    if (num_blocks != 0) {
 
-        Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
+        #pragma omp parallel
+        {
 
-        FixedVectorXd res_block;
+        // TODO use these
 
-        for(int i = 0; i < BLOCK_SIZE; ++i) {
+        LgammaCache lgamma_kr;
+        LgammaCache lgamma_k1;
 
-            if ((i > 0) && (k[i - 1] == k[i])) {
-                res_block[i] = res_block[i - 1];
-                continue;
-            } else {
+        #pragma omp for schedule(static)
+        for(int block = 0; block < num_blocks; ++block) {
+            const int start = block * BLOCK_SIZE;
 
-                double log_comb = std::lgamma(k_block[i] + r) - lgamma_r - std::lgamma(k_block[i] + 1);
+            Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
 
-                res_block[i] = std::exp(log_comb + k_block[i] * log_1_minus_p + r * log_p);
+            FixedVectorXd res_block;
 
-                // res_block[i] = nb_base_fixed_r(k_block[i], r, p, lgamma_r);
+            for(int i = 0; i < BLOCK_SIZE; ++i) {
 
+                if ((i > 0) && (k_block[i - 1] == k_block[i])) {
+                    res_block[i] = res_block[i - 1];
+                    continue;
+                } else {
+
+                    double log_comb = std::lgamma(k_block[i] + r) - lgamma_r - std::lgamma(k_block[i] + 1);
+
+                    res_block[i] = std::exp(log_comb + k_block[i] * log_1_minus_p + r * log_p);
+
+                }
             }
+
+            Eigen::Map<FixedVectorXd>(results.data() + start) = res_block;
         }
 
-        Eigen::Map<FixedVectorXd>(results.data() + start) = res_block;
+    }
+
     }
 
     if(remaining > 0) {
-
         const int start = num_blocks * BLOCK_SIZE;
 
         Eigen::VectorXi k_remaining = k.segment(start, remaining);
 
-        Eigen::VectorXd res_remaining(remaining);
-
-        for(int i = 0; i < remaining; ++i) {
-
-            if ((i > 0) && (k_remaining[i - 1] == k_remaining[i])) {
-                res_remaining[i] = res_remaining[i - 1];
-                continue;
-            } else {
-
-                res_remaining[i] = nb_base_fixed_r(k_remaining[i], r, p, lgamma_r);
-            }
-        }
-
-        results.segment(start, remaining) = res_remaining;
+        results.segment(start, remaining) = nb_base_vec_eigen_sorted(k_remaining, r, p);
     }
 
     return results;

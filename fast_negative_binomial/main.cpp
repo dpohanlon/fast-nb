@@ -5,6 +5,8 @@
 #include <random>
 #include <Eigen/Dense>
 
+#include <boost/math/distributions/negative_binomial.hpp>
+
 #ifdef ENABLE_BENCHMARK
 #include <benchmark/benchmark.h>
 #endif
@@ -72,7 +74,8 @@ static void BM_NegativeBinomialPMF(benchmark::State& state) {
         // std::vector<float> results(k_vals.size());
 
         // for (size_t i = 0; i < k_vals.size(); ++i) {
-        //     results[i] = nb_base(k_vals[i], r, p);
+        //     results[i] = boost::math::pdf(boost::math::negative_binomial(r, p), k_vals[i]);
+        //     // results[i] = nb_base(k_vals[i], r, p);
         //     // results[i] = negative_binomial_pmf_lut(k_vals[i], r, p);
         //     // results[i] = negative_binomial_pmf_optimized(k_vals[i], r, p, lgamma_r);
         // }
