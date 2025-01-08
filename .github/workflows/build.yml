@@ -43,13 +43,12 @@ jobs:
             - name: Install dependencies Mac
               if: runner.os == 'macOS'
               run: |
-                  brew install cmake
                   brew install eigen
                   brew install libomp
                   brew install boost
-                  export LDFLAGS=-L$(brew --prefix)/opt/libomp/lib
-                  export CPPFLAGS=-I$(brew --prefix)/opt/libomp/include
-                  export OpenMP_ROOT=$(brew --prefix)/opt/libomp
+                  # export LDFLAGS=-L$(brew --prefix)/opt/libomp/lib
+                  # export CPPFLAGS=-I$(brew --prefix)/opt/libomp/include
+                  # export OpenMP_ROOT=$(brew --prefix)/opt/libomp
 
             - name: Build wheels with cibuildwheel
               uses: pypa/cibuildwheel@v2.22.0
