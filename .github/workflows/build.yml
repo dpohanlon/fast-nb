@@ -49,6 +49,10 @@ jobs:
                   brew install boost
                   echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
 
+            # Make sure we're only building wheels for the OS version we're on
+            - name: Set macOS deployment target
+              run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d '.' -f 1-2)" >> $GITHUB_ENV
+
             - name: Build wheels with cibuildwheel
               uses: pypa/cibuildwheel@v2.22.0
               with:
