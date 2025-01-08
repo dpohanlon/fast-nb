@@ -43,6 +43,7 @@ jobs:
             - name: Install dependencies Mac
               if: runner.os == 'macOS'
               run: |
+                  brew install cmake
                   brew install eigen
                   brew install libomp
                   brew install boost
