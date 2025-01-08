@@ -46,6 +46,8 @@ jobs:
                   brew install eigen
                   brew install libomp
                   brew install boost
+                  export LDFLAGS=-L$(brew --prefix)/opt/libomp/lib
+                  export CPPFLAGS=-I$(brew --prefix)/opt/libomp/include
                   export OpenMP_ROOT=$(brew --prefix)/opt/libomp
 
             - name: Build wheels with cibuildwheel
