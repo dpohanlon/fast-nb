@@ -1,0 +1,47 @@
+#pragma once
+
+#include <cmath>
+
+class LgammaCache {
+   public:
+    LgammaCache() : current_k_(0), current_lgamma_(0.0), relative_cost_(10) {}
+
+    // Compute lgamma(x) with caching for sorted x
+    double lgamma(int x) {
+        if (x < 1) {
+            std::cerr << "Error: x must be positive integer." << std::endl;
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
+        if (x == current_k_) {
+            return current_lgamma_;
+        } else if (x > current_k_ + relative_cost_) {
+            current_lgamma_ = std::lgamma(static_cast<double>(x));
+            current_k_ = x;
+
+            return current_lgamma_;
+
+        } else {
+            // Compute iteratively from current_k_ to x
+            while (current_k_ < x) {
+                if (current_k_ == 0) {
+                    // Initialize lgamma(1) = 0
+                    current_k_ = 1;
+                    current_lgamma_ = 0.0;
+                } else {
+                    // Use the identity: lgamma(x + 1) = log(x) + lgamma(x)
+                    current_lgamma_ +=
+                        std::log(static_cast<double>(current_k_));
+                    current_k_++;
+                }
+            }
+
+            return current_lgamma_;
+        }
+    }
+
+   private:
+    int current_k_;          // The current largest k computed
+    double current_lgamma_;  // The current lgamma(k) value
+    int relative_cost_;
+};
