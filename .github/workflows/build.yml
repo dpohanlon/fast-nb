@@ -18,7 +18,8 @@ jobs:
                 # os: [ubuntu-latest, macos-13, macos-14]
                 # python-version: ["3.12", "3.13"]
                 os: [macos-14]
-                python-version: ["3.12", "3.13"]
+                python-version: ["3.12"]
+                # python-version: ["3.12", "3.13"]
 
         steps:
             - uses: actions/checkout@v3
@@ -46,9 +47,7 @@ jobs:
                   brew install eigen
                   brew install libomp
                   brew install boost
-                  # export LDFLAGS=-L$(brew --prefix)/opt/libomp/lib
-                  # export CPPFLAGS=-I$(brew --prefix)/opt/libomp/include
-                  # export OpenMP_ROOT=$(brew --prefix)/opt/libomp
+                  echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
 
             - name: Build wheels with cibuildwheel
               uses: pypa/cibuildwheel@v2.22.0
@@ -56,6 +55,7 @@ jobs:
                   output-dir: wheelhouse
               env:
                   CIBW_SKIP: "*musllinux*"
+                  OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
 
             - name: Upload wheels
               uses: actions/upload-artifact@v4
