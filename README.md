@@ -1,27 +1,143 @@
-# Fast negative binomial distribution
+# Fast negative-binomial distribution
 
-There are a few general optimisations:
+Fast negative-binomial distribution for Python and C++, optimised for small repeated counts such as those seen in single-cell RNA sequencing data.
 
-* A lookup table for log-gamma for small values (<= 85) of k and n (only on GCC with `constexpr` cmath)
-* Stirling's approximation for large (> 10) values of k and r
-* An optimisation when r is fixed that pre-computes these values and re-uses them every invocation of log-gamma
+Usage
+=====
 
-These result in divergences with the high-precision version of at most ~1E-5. There are some more extreme approximations that can be made:
+In Python, two versions of the negative-binomial distribution are given, each of which accept either scalar or vector (e.g., `np.array`) observations. The vector functions are parallelised using OpenMP, so be sure to set `OMP_NUM_THREADS` to a reasonable value.
 
-* Expansion form of `std::exp`
-* Expansion form of `std::log`
+```bash
+export OMP_NUM_THREADS=4
+```
 
-This is mostly envisioned for calculations where r and p are scalars and k is a vector of reasonable size (~1000). As such the vectorisation is performed over k. The code exposes functions of all scalars, and scalar r, p with vector k.
+The first function is formulated as the number of failures before the r-th success, with probability p, and is given by the function `fast_negative_binomial.negative_binomial`. This is a drop-in replacement of the `scipy.stats.nbinom.pmf` function.
+
+```python
+from fast_negative_binomial import negative_binomial
+
+p = 0.1
+r = 10
+ks = np.array([3, 7, 1, 0, 1])
+
+nb = negative_binomial(ks, r, p)
+```
+
+The second function is known as 'nb2' in statisical packages such as NumPyro, and represents the distribution in terms of the overdispersion `m` and concentration `r` od the distribution (ADD SOME EXPRESSOINS HERE).
+
+```python
+from fast_negative_binomial import negative_binomial2
+
+m = 10
+r = 10
+ks = np.array([3, 7, 1, 0, 1])
+
+nb = negative_binomial2(ks, m, r)
+```
+
+Performance
+====
+
+IOU performance
+
+Installation
+=====
+
+For Python, install from PyPi using pip:
+
+```bash
+pip install fast_negative_binomial
+```
+
+or, using the latest wheel from GitHub:
+
+```bash
+pip install fast_negative_binomial-0.1.0-cp310-cp310-macosx_11_0_arm64.whl
+```
+
+or, to install from source, see below.
+
+Building
+========
+
+When building from source, this package requires CMake, Boost, Eigen, OpenMP, and PyBind11. PyBind11 is included with the package, however the reast are best installed using the package manager for your system. On Mac these can be installed using `brew`:
+
+```bash
+brew install cmake
+brew install eigen
+brew install libomp
+brew install boost
+```
+
+and OpenMP requires the path to be set:
+
+``` bash
+echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
+```
+
+On Ubuntu, these can be installed using `apt-get`:
+
+```bash
+sudo apt-get install cmake
+sudo apt-get install python3-dev
+sudo apt-get install libboost-all-dev
+sudo apt-get install libeigen3-dev
+
+```
+
+To checkout the repository and PyBind11:
+
+``` bash
+
+git clone --recurse-submodules git@github.com:dpohanlon/fast_nb.git
+cd fast_nb
+```
+
+C++
+---
+
+To build the C++ library, you can build with CMake:
+
+```bash
+mkdir build
+cd build
+cmake ../
+make -j4
+```
+
+and to build with the optional benchmarks (required Google Benchmarks installed), configure cmake with the argument `-DENABLE_BENCHMARK=true`:
+
+```bash
+cmake ../ -DENABLE_BENCHMARK=true
+```
+
+Python
+-----
+
+With the repository checked out, build using pip and setuptools with scikit-build:
+
+```bash
+pip install .
+```
+
+Contributing
+-------
+
+If you've made modifications, reformat with `clang-format`:
+
+```bash
+clang-format -i -style=file fast_negative_binomial/*
+```
 
 Optimisations
 =============
 
-In addition to pre-computing r when fixed, there are two further optimisations that either cache the return value of the function, or cache the value of log gamma:
+Above a certain length of `k` where the overhead of spawning threads is worthwhile, caluculations are done in parallel over `OMP_NUM_THREADS`. The value of `r` is cached and used over all iterations, and (where `constexpr` math is supported) small combinations of `k` and `r` are pre-computed at compile time. There are also two further optimisations that either cache the return value of the function, or cache the value of log gamma:
 
 Caching the return
 -------
 
-As k is always an integer, sorting the array a head of time allows us to cache the previous result, to be used if the next value of k is the same. This is particularly useful for the case of single cell RNA sequencing data, where numerous small counts are repeated.
+As `k` is always an integer, sorting the array a head of time allows us to cache the previous result, to be used if the next value of `k` is the same. This is particularly useful for the case of single cell RNA sequencing data, where numerous small counts are repeated.
 
 Caching log gamma
 -------

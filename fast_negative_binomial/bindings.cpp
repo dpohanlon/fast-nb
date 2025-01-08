@@ -90,7 +90,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
             Parameters:
                 k (List[int]): Observations
-                p (float): Overdispersion of distribution
+                m (float): Overdispersion of distribution
                 r (float): Concentration of distribution
 
             Returns:
@@ -100,8 +100,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
     // By default Pybind11 copies the inputs
     m.def(
         "negative_binomial2",
-        [](Eigen::VectorXi& k, int r, double p) -> Eigen::VectorXd {
-            return nb2_base_vec_eigen_blocks_no_copy(k, r, p);
+        [](Eigen::VectorXi& k, int m, double r) -> Eigen::VectorXd {
+            return nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
         R"pbdoc(
@@ -109,7 +109,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
             Parameters:
                 k (List[int]): Observations
-                p (float): Overdispersion of distribution
+                m (float): Overdispersion of distribution
                 r (float): Concentration of distribution
 
             Returns:

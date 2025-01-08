@@ -1,11 +1,4 @@
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <map>
-#include <numeric>
-#include <tuple>
-#include <vector>
 
 #include "base_nb.hpp"
 #include "eigen_nb.hpp"

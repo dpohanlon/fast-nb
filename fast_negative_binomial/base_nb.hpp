@@ -6,13 +6,6 @@
 #include <boost/sort/sort.hpp>
 #include <boost/sort/spreadsort/spreadsort.hpp>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <map>
-#include <numeric>
-#include <tuple>
-#include <vector>
 
 #include "cache.hpp"
 #include "utils.hpp"
