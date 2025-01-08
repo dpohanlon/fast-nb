@@ -37,12 +37,16 @@ jobs:
               if: runner.os == 'Linux'
               run: |
                   sudo apt-get install python3-dev
+                  sudo apt-get install libboost-all-dev
                   sudo apt-get install libeigen3-dev
 
-            - name: Install dependencies Linux
+            - name: Install dependencies Mac
               if: runner.os == 'macOS'
               run: |
                   brew install eigen
+                  brew install libomp
+                  brew install boost
+                  export OpenMP_ROOT=$(brew --prefix)/opt/libomp
 
             - name: Build wheels with cibuildwheel
               uses: pypa/cibuildwheel@v2.22.0
