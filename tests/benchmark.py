@@ -34,7 +34,7 @@ jax.config.update("jax_enable_x64", True)
 
 from fast_negative_binomial import  negative_binomial2, negative_binomial_boost_vec
 
-os.environ["OMP_NUM_THREADS"] = "4"         # Specify the number of threads
+os.environ["OMP_NUM_THREADS"] = "8"         # Specify the number of threads
 os.environ["OMP_DYNAMIC"] = "FALSE"        # Disable dynamic adjustment of threads
 os.environ["OMP_PROC_BIND"] = "TRUE"        # Enable thread affinity
 os.environ["OMP_PLACES"] = "cores"          # Define where threads are placed
