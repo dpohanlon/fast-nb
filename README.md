@@ -48,7 +48,9 @@ To avoid unncessary copies, these functions sort the vector of observations in p
 Performance
 ====
 
-IOU performance
+![comparison](assets/comparison.png)
+
+Run time comparison on an M3 Pro, with `OMP_NUM_THREADS=8`. This is an average over 100 runs, so that the high startup costs of the JAX JIT compilation is amortized.
 
 Installation
 =====
