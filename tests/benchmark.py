@@ -1,7 +1,24 @@
+import matplotlib as mpl
+
+mpl.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
+rcParams["axes.facecolor"] = "FFFFFF"
+rcParams["savefig.facecolor"] = "FFFFFF"
+rcParams["xtick.direction"] = "in"
+rcParams["ytick.direction"] = "in"
+
+rcParams.update({"figure.autolayout": True})
+
+rcParams["figure.figsize"] = (9, 9)
+
+from typing_extensions import DefaultDict
 
 import numpy as np
 import timeit
+
+from tqdm import tqdm
 
 # import torch
 # import pyro.distributions as dist_pyro
@@ -64,7 +81,9 @@ def bench_numpyro():
     p = r / (m + r)
     dist_numpyro.NegativeBinomialProbs(r, p).log_prob(ks)
 
-for f in [bench_jax_scipy, bench_fast_nb, bench_scipy, bench_numpyro, bench_boost_nb]:
+methods = [bench_jax_scipy, bench_fast_nb, bench_scipy, bench_numpyro, bench_boost_nb]
+
+for f in methods:
 
     ks = np.ascontiguousarray(nbinom.rvs(r, r / (m + r), size=100000).astype(np.int32))
 
@@ -75,9 +94,40 @@ for f in [bench_jax_scipy, bench_fast_nb, bench_scipy, bench_numpyro, bench_boos
 
     print(f"Average {f.__name__} computation time over {repetitions} runs: {average_time:.6f} ms")
 
+ks = np.ascontiguousarray(nbinom.rvs(r, r / (m + r), size=100000).astype(np.int32))
+
 scipy_nb_res = nbinom.pmf(ks, r, r / (m + r))
-fast_nb_res = negative_binomial2(ks, m, r)
+fast_nb_res = negative_binomial2(ks.copy(), m, r)
 
 plt.plot(ks, fast_nb_res - scipy_nb_res, '.')
 plt.savefig('difference.png')
+plt.clf()
+
+results = DefaultDict(list)
+
+k_totals = np.logspace(0, 6, 100)
+print(k_totals)
+for k_tot in tqdm(k_totals):
+
+    ks = np.ascontiguousarray(nbinom.rvs(r, r / (m + r), size=int(k_tot)).astype(np.int32))
+
+    for f in methods:
+
+        n = 100
+
+        elapsed = timeit.timeit(f, number=n)
+        elapsed /= n
+        elapsed *= 1e3
+
+        results[f.__name__].append(elapsed)
+
+fig, ax = plt.subplots()
+for k, v in results.items():
+    plt.plot(k_totals, v, '.', label = k, markersize = 15)
+plt.ylabel('Wall clock time (ms)', fontsize = 26)
+plt.xlabel('Input size', fontsize = 26)
+plt.legend(loc = 0, fontsize = 26)
+ax.tick_params(axis='both', which='major', labelsize=22)
+ax.tick_params(axis='both', which='minor', labelsize=16)
+plt.savefig('comparison.png')
 plt.clf()
