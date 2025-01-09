@@ -34,18 +34,19 @@ std::vector<int> get_poisson(int n, double lambda = 100) {
 // --benchmark_time_unit=us
 
 // static void BM_NegativeBinomialPMF(benchmark::State& state) {
-//     int r = 100;
+//     int r = 50;
 //     float p = 0.7;
 
 //     int num_samples = state.range(0);
 
 //     std::vector<int> k_vals = get_poisson(num_samples);
 
-//     double lgamma_r = std::lgamma(r);
+//     // double lgamma_r = std::lgamma(r);
 
 //     for (auto _ : state) {
 
-//         std::vector<double> results = nb_base_vec(k_vals, r, p);
+//         // std::vector<double> results = nb_base_vec(k_vals, r, p);
+//         std::vector<double> results = nb_boost_vec(k_vals, r, p);
 
 //         benchmark::DoNotOptimize(results);
 //     }
@@ -79,7 +80,7 @@ static void BM_NegativeBinomialPMF(benchmark::State &state) {
         //     lgamma_r);
         // }
 
-        Eigen::VectorXd results = nb_base_vec_eigen_blocks(k_vals_eigen, r, p);
+        Eigen::VectorXd results = nb2_base_vec_eigen_blocks_no_copy(k_vals_eigen, r, p);
 
         benchmark::DoNotOptimize(results);
     }

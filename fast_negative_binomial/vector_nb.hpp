@@ -3,6 +3,8 @@
 #include <cmath>
 #include <vector>
 
+#include <boost/math/distributions/negative_binomial.hpp>
+
 #include "base_nb.hpp"
 #include "utils.hpp"
 
@@ -21,6 +23,20 @@ std::vector<double> nb_base_vec(std::vector<int> k, T r, double p) {
 
     return results;
 }
+
+std::vector<double> nb_boost_vec(std::vector<int> k, double r, double p) {
+
+    std::vector<double> results(k.size());
+
+    boost::math::negative_binomial_distribution<> nb(r, p);
+
+    for (int i = 0; i < k.size(); ++i) {
+        results[i] = boost::math::pdf(nb, k[i]);
+    }
+
+    return results;
+}
+
 
 std::vector<double> nb2_base_vec(std::vector<int> k, double m, double r) {
     // m : mean

@@ -129,6 +129,7 @@ void process_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
                     const int num_blocks) {
 #pragma omp parallel
     {
+
         // Each thread should have its own cache
         LgammaCache lgamma_kr;
         LgammaCache lgamma_k1;
@@ -178,8 +179,9 @@ Eigen::VectorXd process_remaining(const Eigen::VectorXi &k, const int start,
  * @return Eigen::VectorXd The computed PMF values.
  */
 template <typename T>
-Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::VectorXi &k, T r,
+Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, T r,
                                                  double p) {
+
     // Precompute constants
     const double r_d = static_cast<double>(r);
     const double lgamma_r = std::lgamma(r_d);
@@ -213,7 +215,7 @@ Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::VectorXi &k, T r,
 }
 
 template <typename T>
-Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k_in, T r,
+Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi & k_in, T r,
                                          double p) {
     // Copy to avoid modifying the input vector - there is some overhead here
     Eigen::VectorXi k = k_in;
@@ -242,7 +244,7 @@ Eigen::VectorXd nb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
     return nb_base_vec_eigen_blocks(k, r, p);
 }
 
-Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::VectorXi &k, double m,
+Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
                                                   double r) {
     // m : mean
     // r : concentration

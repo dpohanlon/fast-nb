@@ -1,6 +1,6 @@
 # Fast negative-binomial distribution
 
-Fast negative-binomial distribution for Python and C++, optimised for small repeated counts such as those seen in single-cell RNA sequencing data.
+A fast negative-binomial distribution for Python and C++, optimised for small repeated integer counts such as those seen in single-cell RNA sequencing data.
 
 Usage
 =====
@@ -11,7 +11,7 @@ In Python, two versions of the negative-binomial distribution are given, each of
 export OMP_NUM_THREADS=4
 ```
 
-The first function is formulated as the number of failures `r`, and number of successes `k`, with probability of success `p`.
+The first function is formulated as the number of failures `r`, and number of successes `k`, with probability of success `p`,
 
 $$ f(k;r,p) = \binom{k+r - 1}{k}(1 - p)^kp^r $$
 
@@ -42,6 +42,8 @@ ks = np.array([3, 7, 1, 0, 1])
 
 nb = negative_binomial2(ks, m, r)
 ```
+
+To avoid unncessary copies, these functions sort the vector of observations in place. If this is a problem, make a copy beforehand.
 
 Performance
 ====
@@ -82,7 +84,7 @@ brew install boost
 and OpenMP requires the path to be set:
 
 ``` bash
-echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
+export OpenMP_ROOT=$(brew --prefix)/opt/libomp
 ```
 
 On Ubuntu, these can be installed using `apt-get`:

@@ -8,7 +8,7 @@ class LgammaCache {
 
     // Compute lgamma(x) with caching for sorted x
     double lgamma(int x) {
-        if (x < 1) {
+        if (x < 0) {
             std::cerr << "Error: x must be positive integer." << std::endl;
             return std::numeric_limits<double>::quiet_NaN();
         }

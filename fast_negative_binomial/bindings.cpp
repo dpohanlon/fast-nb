@@ -44,6 +44,24 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         )pbdoc");
 
     m.def(
+        "negative_binomial_boost_vec",
+        [](std::vector<int> k, double r, double p) -> std::vector<double> {
+            return nb_boost_vec(k, r, p);
+        },
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Number of failures for each case.
+                r (int): Number of successes.
+                p (float): Probability of success on an individual trial.
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    m.def(
         "negative_binomial_eigen",
         [](Eigen::VectorXi k, int r, double p) -> Eigen::VectorXd {
             return nb_base_vec_eigen_blocks<int>(k, r, p);
@@ -97,10 +115,9 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 List[float]: The PMF values.
         )pbdoc");
 
-    // By default Pybind11 copies the inputs anyway
     m.def(
         "negative_binomial2",
-        [](Eigen::VectorXi& k, int m, double r) -> Eigen::VectorXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
             return nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -115,4 +132,5 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
             Returns:
                 List[float]: The PMF values.
         )pbdoc");
+
 }
