@@ -97,7 +97,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 List[float]: The PMF values.
         )pbdoc");
 
-    // By default Pybind11 copies the inputs
+    // By default Pybind11 copies the inputs anyway
     m.def(
         "negative_binomial2",
         [](Eigen::VectorXi& k, int m, double r) -> Eigen::VectorXd {

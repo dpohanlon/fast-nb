@@ -5,13 +5,17 @@ Fast negative-binomial distribution for Python and C++, optimised for small repe
 Usage
 =====
 
-In Python, two versions of the negative-binomial distribution are given, each of which accept either scalar or vector (e.g., `np.array`) observations. The vector functions are parallelised using OpenMP, so be sure to set `OMP_NUM_THREADS` to a reasonable value.
+In Python, two versions of the negative-binomial distribution are given, each of which accept either scalar or vector (e.g., `np.array`) of integer valued observations observations. The vector functions are parallelised using OpenMP, so be sure to set `OMP_NUM_THREADS` to a reasonable value.
 
 ```bash
 export OMP_NUM_THREADS=4
 ```
 
-The first function is formulated as the number of failures before the r-th success, with probability p, and is given by the function `fast_negative_binomial.negative_binomial`. This is a drop-in replacement of the `scipy.stats.nbinom.pmf` function.
+The first function is formulated as the number of failures `r`, and number of successes `k`, with probability of success `p`.
+
+$$ f(k;r,p) = \binom{k+r - 1}{k}(1 - p)^kp^r $$
+
+This is given by the function `fast_negative_binomial.negative_binomial`. This is a drop-in replacement of the `scipy.stats.nbinom.pmf` function.
 
 ```python
 from fast_negative_binomial import negative_binomial
@@ -23,7 +27,11 @@ ks = np.array([3, 7, 1, 0, 1])
 nb = negative_binomial(ks, r, p)
 ```
 
-The second function is known as 'nb2' in statisical packages such as NumPyro, and represents the distribution in terms of the overdispersion `m` and concentration `r` od the distribution (ADD SOME EXPRESSOINS HERE).
+The second function is known as 'nb2' in statisical packages such as [NumPyro](https://num.pyro.ai/en/stable/distributions.html#negativebinomial2), and represents the distribution in terms of the mean of the `m` and concentration `r`, where
+
+$$ p = \frac{r}{r + m}$$
+
+This follows the same argument ordering as the NumPyro function (notably, reversing the last two arguments, with the same `r`),
 
 ```python
 from fast_negative_binomial import negative_binomial2
@@ -49,7 +57,7 @@ For Python, install from PyPi using pip:
 pip install fast_negative_binomial
 ```
 
-or, using the latest wheel from GitHub:
+or, using the [latest wheel](https://github.com/dpohanlon/fast_nb/releases) for your platform from GitHub:
 
 ```bash
 pip install fast_negative_binomial-0.1.0-cp310-cp310-macosx_11_0_arm64.whl
@@ -60,7 +68,9 @@ or, to install from source, see below.
 Building
 ========
 
-When building from source, this package requires CMake, Boost, Eigen, OpenMP, and PyBind11. PyBind11 is included with the package, however the reast are best installed using the package manager for your system. On Mac these can be installed using `brew`:
+This is the best way to ensure that the package uses as many features of your CPU as possible, as the pre-built libraries are built assuming generic CPU architectures.
+
+When building from source, this package requires CMake, Boost, Eigen, OpenMP, and PyBind11. PyBind11 is included with the package, however the rest are best installed using the package manager for your system. On Mac these can be installed using `brew`:
 
 ```bash
 brew install cmake
@@ -85,7 +95,7 @@ sudo apt-get install libeigen3-dev
 
 ```
 
-To checkout the repository and PyBind11:
+To checkout the repository, as well as the PyBind11 submodule:
 
 ``` bash
 
@@ -105,7 +115,7 @@ cmake ../
 make -j4
 ```
 
-and to build with the optional benchmarks (required Google Benchmarks installed), configure cmake with the argument `-DENABLE_BENCHMARK=true`:
+and to build with the optional benchmarks (requires Google Benchmarks), configure cmake with the argument `-DENABLE_BENCHMARK=true`:
 
 ```bash
 cmake ../ -DENABLE_BENCHMARK=true
@@ -114,7 +124,7 @@ cmake ../ -DENABLE_BENCHMARK=true
 Python
 -----
 
-With the repository checked out, build using pip and setuptools with scikit-build:
+With the repository checked out, build using pip:
 
 ```bash
 pip install .
