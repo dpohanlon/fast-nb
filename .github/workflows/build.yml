@@ -39,9 +39,6 @@ jobs:
           sudo apt-get install python3-dev
           sudo apt-get install libboost-all-dev
           sudo apt-get install libeigen3-dev
-          ls -lth /opt/eigen/
-          ls -lth /opt/eigen3/
-          ls -lth /usr/include/eigen3/
           ls -lth /usr/share/eigen3/
           echo "export CMAKE_PREFIX_PATH=/usr/share:$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
 
