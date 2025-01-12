@@ -37,7 +37,7 @@ jobs:
           sudo apt-get install python3-dev
           sudo apt-get install libboost-all-dev
           sudo apt-get install libeigen3-dev
-          echo "export CMAKE_PREFIX_PATH=/usr/share/eigen3:$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
+          echo "export CMAKE_PREFIX_PATH=/usr/share:$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
