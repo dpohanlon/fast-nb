@@ -38,7 +38,13 @@ jobs:
         run: |
           sudo apt install python3-dev
           sudo apt install libboost-all-dev
-          sudo apt install libeigen3-dev
+          # sudo apt install libeigen3-dev
+          git clone https://gitlab.com/libeigen/eigen.git
+          cd eigen
+          mkdir build
+          cd build
+          cmake ..
+          sudo make install
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
