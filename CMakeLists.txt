@@ -1,5 +1,5 @@
 # CMakeLists.txt for building and linking Google Benchmark, Pybind11, and Boost
-cmake_minimum_required(VERSION 3.5...3.18)
+cmake_minimum_required(VERSION 3.10...3.18)
 project(FastNB LANGUAGES CXX)
 
 # Set C++ standard
@@ -29,7 +29,7 @@ add_subdirectory(extern/pybind11)
 # Find Threads
 find_package(Threads REQUIRED)
 
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(Eigen3 3.3 REQUIRED)
 
 # Find Boost
 if(ENABLE_BOOST)
