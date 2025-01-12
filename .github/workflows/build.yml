@@ -46,6 +46,8 @@ jobs:
           cd build
           cmake .. -DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF
           sudo make install
+          CMAKE_PREFIX_PATH
+          echo "CMAKE_PREFIX_PATH=/usr/local/include/eigen3" >> $GITHUB_ENV
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
@@ -67,6 +69,7 @@ jobs:
         env:
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
+          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
 
       - name: Run Tests
         run: |
