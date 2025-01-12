@@ -29,7 +29,7 @@ add_subdirectory(extern/pybind11)
 # Find Threads
 find_package(Threads REQUIRED)
 
-find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 # Find Boost
 if(ENABLE_BOOST)
