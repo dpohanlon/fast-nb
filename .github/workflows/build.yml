@@ -38,12 +38,13 @@ jobs:
         run: |
           sudo apt install python3-dev
           sudo apt install libboost-all-dev
+          sudo apt install cmake --upgrade
           # sudo apt install libeigen3-dev
           git clone https://gitlab.com/libeigen/eigen.git
           cd eigen
           mkdir build
           cd build
-          cmake ..
+          cmake ..-DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF
           sudo make install
 
       - name: Install dependencies Mac
