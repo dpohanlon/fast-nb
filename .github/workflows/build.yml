@@ -67,14 +67,17 @@ jobs:
             BOOST_VERSION=1.81.0
             wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.gz
             tar -xzf boost_${BOOST_VERSION//./_}.tar.gz
-            mkdir -p /usr/local/include/
-            cp -r boost_${BOOST_VERSION//./_}/boost /usr/local/include/
+            cd boost_${BOOST_VERSION//./_}
+            ./bootstrap.sh --prefix=/usr/local
+            ./b2 install
             # Install Eigen from source
             EIGEN_VERSION=3.4.0
             wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz
             tar -xzf eigen-${EIGEN_VERSION}.tar.gz
-            mkdir -p /usr/local/include/eigen3
-            cp -r eigen-${EIGEN_VERSION}/Eigen /usr/local/include/eigen3/
+            cd eigen-${EIGEN_VERSION}
+            mkdir build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+            make install
       - name: Run Tests
         run: |
           pip install wheelhouse/*.whl
