@@ -39,11 +39,11 @@ jobs:
           sudo apt install python3-dev
           sudo apt install libboost-all-dev
           sudo apt install cmake --upgrade
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install eigen
+          # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          # brew install eigen
           # # sudo apt install libeigen3-dev
-          # git clone https://gitlab.com/libeigen/eigen.git
+          git clone https://gitlab.com/libeigen/eigen.git
           # cd eigen
           # mkdir build
           # cd build
