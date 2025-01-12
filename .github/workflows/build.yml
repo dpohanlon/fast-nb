@@ -61,8 +61,7 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
           CIBW_BEFORE_ALL_LINUX: >
-            yum update
-            yum search boost
+            yum update &&
             yum install -y boost-devel &&
             yum install -y eigen3-devel &&
             yum install -y python3-devel
