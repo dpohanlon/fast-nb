@@ -42,7 +42,7 @@ if(ENABLE_BOOST)
     # set(BOOST_INCLUDEDIR "/path/to/boost/include")
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
-    find_package(Boost 1.53 REQUIRED sort)
+    find_package(Boost 1.53.0 REQUIRED sort)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")
