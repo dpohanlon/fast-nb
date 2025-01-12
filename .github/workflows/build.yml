@@ -71,9 +71,9 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
           CIBW_BEFORE_ALL_LINUX: >
-            yum install -y libboost-all-dev &&
-            yum install -y libeigen3-dev &&
-            yum install -y python3-dev
+            yum install -y boost-devel &&
+            yum install -y eigen3-devel &&
+            yum install -y python3-devel
 
       - name: Run Tests
         run: |
