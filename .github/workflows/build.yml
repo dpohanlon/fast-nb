@@ -74,7 +74,7 @@ jobs:
             apt-get update &&
             apt-get install -y libboost-all-dev &&
             apt-get install -y libeigen3-dev &&
-            apt-get install -y python3-dev &&
+            apt-get install -y python3-dev
 
       - name: Run Tests
         run: |
