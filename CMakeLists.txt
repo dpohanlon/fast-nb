@@ -35,14 +35,14 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # Find Boost
 if(ENABLE_BOOST)
     # Specify the Boost components you need
-    set(BOOST_COMPONENTS sort)
+    # set(BOOST_COMPONENTS system)
 
     # Optionally specify the Boost root if it's in a non-standard location
     # set(BOOST_ROOT "/path/to/boost")
     # set(BOOST_INCLUDEDIR "/path/to/boost/include")
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
-    find_package(Boost 1.65.0 REQUIRED sort)
+    find_package(Boost 1.65.0 REQUIRED)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")
