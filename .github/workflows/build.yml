@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         #, macos-13, macos-14]
         python-version: ["3.9"]
         #, "3.10", "3.11", "3.12", "3.13"]
@@ -39,7 +39,6 @@ jobs:
           sudo apt-get install python3-dev
           sudo apt-get install libboost-all-dev
           sudo apt-get install libeigen3-dev
-          apt-cache show libeigen3-dev
           echo "export CMAKE_PREFIX_PATH=/usr/share:$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
 
       - name: Install dependencies Mac
