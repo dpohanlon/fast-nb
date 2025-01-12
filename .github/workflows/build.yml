@@ -38,17 +38,7 @@ jobs:
         run: |
           sudo apt install python3-dev
           sudo apt install libboost-all-dev
-          sudo apt install cmake --upgrade
-          # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          # brew install eigen
-          # # sudo apt install libeigen3-dev
-          # git clone https://gitlab.com/libeigen/eigen.git
-          # cd eigen
-          # mkdir build
-          # cd build
-          # cmake .. -DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF -DCMAKE_INSTALL_PREFIX=/project
-          # sudo make install
+          sudo apt install libeigen3-dev
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
@@ -71,6 +61,8 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
           CIBW_BEFORE_ALL_LINUX: >
+            yum update
+            yum search boost
             yum install -y boost-devel &&
             yum install -y eigen3-devel &&
             yum install -y python3-devel

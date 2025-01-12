@@ -35,7 +35,7 @@ include_directories( "/usr/local/include/eigen3" )
 # Find Boost
 if(ENABLE_BOOST)
     # Specify the Boost components you need
-    set(BOOST_COMPONENTS filesystem system math)  # Added 'math'
+    set(BOOST_COMPONENTS filesystem system math)
 
     # Optionally specify the Boost root if it's in a non-standard location
     # set(BOOST_ROOT "/path/to/boost")
