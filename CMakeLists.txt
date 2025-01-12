@@ -29,8 +29,8 @@ add_subdirectory(extern/pybind11)
 # Find Threads
 find_package(Threads REQUIRED)
 
-#find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-include_directories( "/usr/local/include/eigen3" )
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+#include_directories( "/usr/local/include/eigen3" )
 
 # Find Boost
 if(ENABLE_BOOST)
@@ -42,7 +42,7 @@ if(ENABLE_BOOST)
     # set(BOOST_INCLUDEDIR "/path/to/boost/include")
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
-    find_package(Boost 1.70.0 REQUIRED system math)
+    find_package(Boost 1.53.0 REQUIRED system math)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")
