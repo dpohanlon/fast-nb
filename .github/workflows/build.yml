@@ -80,7 +80,7 @@ jobs:
             make install
       - name: Run Tests
         run: |
-          pip install wheelhouse/*.whl
+          pip install wheelhouse/fast_negative_binomial-0.1.0-cp313-cp313-manylinux_2_28_x86_64.whl
           pip install nose2
           cd tests
           nose2
