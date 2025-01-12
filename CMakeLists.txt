@@ -85,10 +85,10 @@ target_link_libraries(fast_nb_lib PUBLIC Eigen3::Eigen)
 # Include Boost headers
 #target_include_directories(fast_nb_lib PRIVATE ${Boost_INCLUDE_DIRS})
 #target_include_directories(fast_nb PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(fast_nb PRIVATE Boost::headers Boost::system)
+target_link_libraries(fast_nb PRIVATE Boost::headers)
 
 # If you're using Boost in the Python module as well
-# target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib Boost::filesystem Boost::system)
+# target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib Boost::system)
 #endif()
 
 # Create the Python module using Pybind11
