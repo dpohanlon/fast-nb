@@ -75,10 +75,12 @@ jobs:
             EIGEN_VERSION=3.4.0
             wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz
             tar -xzf eigen-${EIGEN_VERSION}.tar.gz
-            cd eigen-${EIGEN_VERSION}
-            mkdir build && cd build
-            cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DEIGEN_BUILD_LAPACK=OFF -DEIGEN_BUILD_BLAS=OFF
-            make install
+            mkdir -p /usr/local/include/eigen3
+            cp -r eigen-${EIGEN_VERSION}/Eigen /usr/local/include/eigen3/
+            # cd eigen-${EIGEN_VERSION}
+            # mkdir build && cd build
+            # cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+            # make install
 
       - name: Run Tests
         run: |
