@@ -44,7 +44,7 @@ jobs:
           cd eigen
           mkdir build
           cd build
-          cmake ..-DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF
+          cmake .. -DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF
           sudo make install
 
       - name: Install dependencies Mac
