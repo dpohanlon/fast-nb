@@ -39,13 +39,16 @@ jobs:
           sudo apt install python3-dev
           sudo apt install libboost-all-dev
           sudo apt install cmake --upgrade
-          # sudo apt install libeigen3-dev
-          git clone https://gitlab.com/libeigen/eigen.git
-          cd eigen
-          mkdir build
-          cd build
-          cmake .. -DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF -DCMAKE_INSTALL_PREFIX=/project
-          sudo make install
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install eigen
+          # # sudo apt install libeigen3-dev
+          # git clone https://gitlab.com/libeigen/eigen.git
+          # cd eigen
+          # mkdir build
+          # cd build
+          # cmake .. -DEIGEN_BUILD_BLAS=OFF -DEIGEN_BUILD_LAPACK=OFF -DCMAKE_INSTALL_PREFIX=/project
+          # sudo make install
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
