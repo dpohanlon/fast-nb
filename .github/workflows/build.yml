@@ -67,10 +67,8 @@ jobs:
             BOOST_VERSION=1.81.0
             wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.gz
             tar -xzf boost_${BOOST_VERSION//./_}.tar.gz
-            cd boost_${BOOST_VERSION//./_}
-            ./bootstrap.sh --prefix=/usr/local
-            ./b2 install
-            cd ..
+            mkdir -p /usr/local/include/
+            cp -r boost_${BOOST_VERSION//./_}/boost /usr/local/include/
             # Install Eigen from source
             EIGEN_VERSION=3.4.0
             wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz
@@ -81,6 +79,7 @@ jobs:
             # mkdir build && cd build
             # cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
             # make install
+          CIBW_ENVIRONMENT_LINUX: BOOST_ROOT=/boost
 
       - name: Run Tests
         run: |
