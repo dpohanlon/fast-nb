@@ -61,10 +61,16 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
-          CIBW_BEFORE_ALL_LINUX: >
-            yum install -y boost-devel &&
-            yum install -y eigen3-devel &&
-            yum install -y python3-devel
+          CIBW_BEFORE_ALL_LINUX: |
+            BOOST_VERSION=1.81.0
+            wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.gz
+            tar -xzf boost_${BOOST_VERSION//./_}.tar.gz
+            cd boost_${BOOST_VERSION//./_}
+            ./bootstrap.sh --prefix=/usr/local
+            ./b2 install
+            # yum install -y boost-devel
+            # yum install -y eigen3-devel
+            # yum install -y python3-devel
 
       - name: Run Tests
         run: |
