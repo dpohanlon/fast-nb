@@ -77,7 +77,7 @@ jobs:
             tar -xzf eigen-${EIGEN_VERSION}.tar.gz
             cd eigen-${EIGEN_VERSION}
             mkdir build && cd build
-            cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DEIGEN_BUILD_LAPACK=OFF -DEIGEN_BUILD_BLAS=OFF
             make install
 
       - name: Run Tests
