@@ -33,12 +33,12 @@ jobs:
           git submodule update --init --recursive
           python -m pip install --upgrade pip
 
-      - name: Install dependencies Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt install python3-dev
-          sudo apt install libboost-all-dev
-          sudo apt install libeigen3-dev
+      # - name: Install dependencies Linux
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt install python3-dev
+      #     sudo apt install libboost-all-dev
+      #     sudo apt install libeigen3-dev
 
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
@@ -62,15 +62,23 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
           CIBW_BEFORE_ALL_LINUX: |
+            yum install wget
+            # Install Boost from source
             BOOST_VERSION=1.81.0
             wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.gz
             tar -xzf boost_${BOOST_VERSION//./_}.tar.gz
             cd boost_${BOOST_VERSION//./_}
             ./bootstrap.sh --prefix=/usr/local
             ./b2 install
-            # yum install -y boost-devel
-            # yum install -y eigen3-devel
-            # yum install -y python3-devel
+            cd ..
+            # Install Eigen from source
+            EIGEN_VERSION=3.4.0
+            wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz
+            tar -xzf eigen-${EIGEN_VERSION}.tar.gz
+            cd eigen-${EIGEN_VERSION}
+            mkdir build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+            make install
 
       - name: Run Tests
         run: |
