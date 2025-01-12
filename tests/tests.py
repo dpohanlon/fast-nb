@@ -14,19 +14,25 @@ print("OMP_DYNAMIC:", os.getenv("OMP_DYNAMIC"))
 print("OMP_PROC_BIND:", os.getenv("OMP_PROC_BIND"))
 print("OMP_PLACES:", os.getenv("OMP_PLACES"))
 
-r = 1.
-m = 50.
-repetitions = 100
-
-ks = nbinom.rvs(r, r / (m + r), size=100).astype(np.int32)
-
 def test_nb2():
 
-    res = negative_binomial2(ks, m, r)
+    n = 100
 
-    scipy_nb_res = nbinom.pmf(ks, r, r / (m + r))
+    ms = np.linspace(1, 100, n)
+    rs = np.linspace(1, 100, n)
 
-    assert np.allclose(res, scipy_nb_res)
+    for i in range(n):
+
+        m = ms[i]
+        r = rs[i]
+
+        ks = nbinom.rvs(r, r / (m + r), size=1000).astype(np.int32)
+
+        res = negative_binomial2(ks, m, r)
+
+        scipy_nb_res = nbinom.pmf(ks, r, r / (m + r))
+
+        assert np.allclose(res, scipy_nb_res), f"Failed for m={m}, r={r}"
 
 if __name__ == "__main__":
     test_nb2()
