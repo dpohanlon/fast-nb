@@ -8,6 +8,7 @@
 #include <cmath>
 #include <numeric>
 
+#include "base_nb.hpp"
 #include "cache.hpp"
 #include "utils.hpp"
 

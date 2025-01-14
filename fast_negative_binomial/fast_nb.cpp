@@ -1,9 +1,4 @@
-#include <cmath>
-
-#include "base_nb.hpp"
-#include "eigen_nb.hpp"
-#include "utils.hpp"
-#include "vector_nb.hpp"
+#include "fast_nb.hpp"
 
 double compute_log_comb_sterling(int k, int r) {
     static const double lgamma_r = lgamma_stirling(r);  // Precompute lgamma(r)
