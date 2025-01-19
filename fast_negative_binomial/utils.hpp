@@ -13,6 +13,13 @@
 // Threshold for switching to Stirling's approximation
 const double STIRLING_THRESHOLD = 10.0;
 
+// Define the fixed block size (tune this based on your needs)
+constexpr int BLOCK_SIZE = 2048;
+
+// Define fixed-size Eigen vector types for integers and doubles
+using FixedVectorXi = Eigen::Matrix<int, BLOCK_SIZE, 1>;
+using FixedVectorXd = Eigen::Matrix<double, BLOCK_SIZE, 1>;
+
 // 1. Eigen to std::vector (Copy)
 template <typename Derived>
 std::vector<typename Derived::Scalar> eigenToStdVectorCopy(

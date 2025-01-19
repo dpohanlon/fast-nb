@@ -76,13 +76,6 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(const Eigen::VectorXi &k, T r,
     return results;
 }
 
-// Define the fixed block size (tune this based on your needs)
-constexpr int BLOCK_SIZE = 2048;
-
-// Define fixed-size Eigen vector types for integers and doubles
-using FixedVectorXi = Eigen::Matrix<int, BLOCK_SIZE, 1>;
-using FixedVectorXd = Eigen::Matrix<double, BLOCK_SIZE, 1>;
-
 /**
  * @brief Computes the Negative Binomial PMF for a single block.
  *
