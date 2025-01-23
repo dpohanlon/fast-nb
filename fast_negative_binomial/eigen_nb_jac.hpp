@@ -9,6 +9,7 @@
 #include <numeric>
 
 #include "base_nb.hpp"
+#include "eigen_nb.hpp"
 #include "cache.hpp"
 #include "utils.hpp"
 
@@ -153,4 +154,28 @@ Eigen::VectorXd nb2_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi
     double p = prob(m, r);
 
     return nb_gradient_vec_eigen_blocks_no_copy(k, r, p);
+}
+
+template <typename T>
+Eigen::MatrixXd zinb_gradient_vec_eigen_blocks_post_process_select(const Eigen::VectorXi &k_in,
+                                                                   double m,
+                                                                   double r,
+                                                                   double alpha) {
+
+    double p = prob(m, r);
+
+    // Probably quite slow to do it this way
+    Eigen::MatrixXd nb_grad = nb_gradient_vec_eigen_blocks(k_in, r, p);
+    Eigen::VectorXd nb_probs = nb_base_vec_eigen_blocks(k_in, r, p);
+
+    Eigen::MatrixXd zinb_grad(k_in.size(), 3);
+    zinb_grad.leftCols(2) = nb_grad;
+
+    Eigen::VectorXd alpha_grad_if_zero = (1 - nb_probs.array()) / (alpha + (1 - alpha) * nb_probs.array());
+
+    Eigen::VectorXd alpha_grad_if_nonzero = -nb_probs.array() / ((1 - alpha) * nb_probs.array());
+
+    zinb_grad.col(2) = (k_in.array() == 0).select(alpha_grad_if_zero, alpha_grad_if_nonzero);
+
+    return zinb_grad;
 }

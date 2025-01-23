@@ -89,3 +89,19 @@ Eigen::VectorXi nb2_invcdf_vec_blocks(const Eigen::VectorXd &alpha_vec,
     double p = prob(m, r);
     return nb_invcdf_vec_blocks(alpha_vec, r, p);
 }
+
+Eigen::VectorXi zinb2_invcdf_vec_blocks_wrapper(const Eigen::VectorXd &alpha_vec,
+                                                 double m,
+                                                 double r,
+                                                 double pi) {
+    double p = prob(m, r);
+
+    Eigen::VectorXi nb_invcdf_results = nb_invcdf_vec_blocks(alpha_vec, r, p);
+    Eigen::VectorXd alpha_adj_vec = (alpha_vec.array() - pi) / (1 - pi);
+
+    Eigen::VectorXi zero_vec = Eigen::VectorXi::Zero(alpha_vec.size());
+
+    Eigen::VectorXi zinb_invcdf_results = (alpha_adj_vec.array() <= 0).select(zero_vec, nb_invcdf_results);
+
+    return zinb_invcdf_results;
+}

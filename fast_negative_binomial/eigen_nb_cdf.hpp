@@ -126,3 +126,21 @@ Eigen::VectorXd nb2_cdf_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
     double p = prob(m, r);
     return nb_cdf_vec_eigen_blocks_no_copy(k, r, p);
 }
+
+Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
+                                         double r, double alpha) {
+
+    double p = prob(m, r);
+    Eigen::VectorXi k_copy = k;
+
+    Eigen::VectorXd cdf = nb_cdf_vec_eigen_blocks_no_copy(k_copy, r, p);
+    Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k_copy.size());
+    Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k_copy.size(), alpha);
+
+    //Adjust for zero-inflation
+    Eigen::VectorXd zero_inflation = (k_copy.array() == 0).select(alpha_vec, zero_vec);
+    Eigen::VectorXd scaled_cdf = cdf * (1.0 - alpha);
+    Eigen::VectorXd zinb_cdf = scaled_cdf.array() + zero_inflation.array();
+
+    return zinb_cdf;
+}
