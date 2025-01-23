@@ -249,27 +249,21 @@ Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
 }
 
 Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
-                                          double r, double alpha) {
+                                           double r, double alpha) {
     // m : mean
     // r : concentration
-
-    // Increase the probability of zero by alpha, and decrease the probability of the rest of the NB distribution by (1 - alpha)
 
     double p = prob(m, r);
 
     Eigen::VectorXd probs = nb_base_vec_eigen_blocks(k, r, p);
 
-    // Fix me
-    double zeroCorrection = alpha;
-    double restCorrection = -(1 - alpha) / k.size();
+    Eigen::VectorXd scaled_probs = probs * (1.0 - alpha);
 
-    Eigen::VectorXd zeroArray(k.size());
-    Eigen::VectorXd restArray(k.size());
+    Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k.size());
+    Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k.size(), alpha);
 
-    zeroArray.setConstant(zeroCorrection);
-    restArray.setConstant(restCorrection);
+    Eigen::VectorXd zero_inflation = (k.array() == 0).select(alpha_vec, zero_vec);
+    Eigen::VectorXd zinb_probs = scaled_probs.array() + zero_inflation.array();
 
-    auto correctionArray = (k.array() == 1).select(zeroArray, restArray);
-
-    return probs + correctionArray;
+    return zinb_probs;
 }
