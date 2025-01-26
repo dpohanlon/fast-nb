@@ -8,21 +8,11 @@
 #include <cmath>
 #include <numeric>
 
-#include "base_nb.hpp"
 #include "eigen_nb.hpp"
-#include "cache.hpp"
 #include "utils.hpp"
 
 #include <boost/math/special_functions/digamma.hpp>
 
-// Precompute log combinatorial coefficients for small values of k, r.
-// This is only constexpr in GCC, but will be for both in C++26
-#if defined(__GNUC__) && !defined(__clang__)
-
-#include "log_comb_gcc.hpp"
-#else
-#include "log_comb.hpp"
-#endif
 
 // Compute gradients block-wise for d(logNB)/dp and d(logNB)/dr.
 //
