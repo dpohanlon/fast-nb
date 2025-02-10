@@ -1,5 +1,5 @@
 # CMakeLists.txt for building and linking Google Benchmark, Pybind11, and Boost
-cmake_minimum_required(VERSION 3.5...3.18)
+cmake_minimum_required(VERSION 3.10...3.18)
 project(FastNB LANGUAGES CXX)
 
 # Set C++ standard
@@ -11,6 +11,8 @@ option(ENABLE_BENCHMARK "Enable Google Benchmark" OFF)
 
 # Option to enable Boost (ON by default)
 option(ENABLE_BOOST "Enable Boost Libraries" ON)
+
+set(PROJECT_VERSION 0.1)
 
 # Allow specifying a custom Clang compiler path
 if(DEFINED CLANG_PATH)
@@ -29,19 +31,20 @@ add_subdirectory(extern/pybind11)
 # Find Threads
 find_package(Threads REQUIRED)
 
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+#include_directories( "/usr/local/include/eigen3" )
 
 # Find Boost
 if(ENABLE_BOOST)
     # Specify the Boost components you need
-    set(BOOST_COMPONENTS filesystem system math)  # Added 'math'
+    set(BOOST_COMPONENTS filesystem system math sort)  # Added 'math'
 
     # Optionally specify the Boost root if it's in a non-standard location
     # set(BOOST_ROOT "/path/to/boost")
     # set(BOOST_INCLUDEDIR "/path/to/boost/include")
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
-    find_package(Boost 1.70.0 REQUIRED system math)
+    find_package(Boost 1.65.0 REQUIRED)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")
@@ -56,14 +59,20 @@ endif()
 add_library(fast_nb_lib STATIC fast_negative_binomial/fast_nb.cpp)
 
 # Specify include directories for the library
-target_include_directories(fast_nb_lib PUBLIC fast_negative_binomial)
+#target_include_directories(fast_nb_lib PUBLIC fast_negative_binomial)
 
 # Add executable target
 add_executable(fast_nb fast_negative_binomial/main.cpp)
 
+#target_include_directories(fast_nb_lib PUBLIC
+#    fast_negative_binomial
+#    ${Boost_INCLUDE_DIRS}  # Ensure Boost includes are PUBLIC
+#)
+
 target_include_directories(fast_nb_lib PUBLIC
-    fast_negative_binomial
-    ${Boost_INCLUDE_DIRS}  # Ensure Boost includes are PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fast_negative_binomial>
+    $<INSTALL_INTERFACE:include/fast_negative_binomial>
+    ${Boost_INCLUDE_DIRS}
 )
 
 # Link the executable with the core library and Threads
@@ -79,16 +88,7 @@ endif()
 target_link_libraries(fast_nb PUBLIC Eigen3::Eigen)
 target_link_libraries(fast_nb_lib PUBLIC Eigen3::Eigen)
 
-# Link Boost libraries if enabled
-#if(ENABLE_BOOST)
-# Include Boost headers
-#target_include_directories(fast_nb_lib PRIVATE ${Boost_INCLUDE_DIRS})
-#target_include_directories(fast_nb PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(fast_nb PRIVATE Boost::headers Boost::system)
-
-# If you're using Boost in the Python module as well
-# target_link_libraries(fast_negative_binomial PRIVATE fast_nb_lib Boost::filesystem Boost::system)
-#endif()
+target_link_libraries(fast_nb PRIVATE Boost::headers)
 
 # Create the Python module using Pybind11
 pybind11_add_module(fast_negative_binomial fast_negative_binomial/bindings.cpp)
@@ -117,3 +117,59 @@ endif()
 
 install(TARGETS fast_negative_binomial
         LIBRARY DESTINATION fast_negative_binomial)
+
+# Install the static library
+install(TARGETS fast_nb_lib
+    EXPORT FastNBTargets
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+# Install the executable
+install(TARGETS fast_nb
+    RUNTIME DESTINATION bin
+)
+
+# Install the Python module
+install(TARGETS fast_negative_binomial
+    LIBRARY DESTINATION lib/python_modules
+)
+
+# Install header files
+install(DIRECTORY fast_negative_binomial/
+    DESTINATION include/fast_negative_binomial
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+)
+
+# Export the targets to a CMake script
+install(EXPORT FastNBTargets
+    FILE FastNBTargets.cmake
+    NAMESPACE FastNB::
+    DESTINATION lib/cmake/FastNB
+)
+
+# Create a package configuration file
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/FastNBConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FastNBConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/FastNBConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/FastNB
+)
+
+# Install the package configuration files
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/FastNBConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/FastNBConfigVersion.cmake"
+    DESTINATION lib/cmake/FastNB
+)
+
+# Optionally, install CMake scripts (if any)
+# install(DIRECTORY cmake/ DESTINATION lib/cmake/FastNB)

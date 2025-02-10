@@ -2,10 +2,9 @@
 
 #include <cmath>
 
-template<typename T>
+template <typename T>
 double compute_log_comb(int k, T r) {
-
-    if(k < 0 || r <= 0){
+    if (k < 0 || r <= 0) {
         return -std::numeric_limits<double>::infinity();
     }
 
@@ -17,7 +16,8 @@ double compute_log_comb(int k, T r) {
 
 //     // Sum log(k + 1) to log(k + r - 1)
 //     for(int i = 1; i < r; ++i){
-//         log_comb += std::log(static_cast<double>(k) + static_cast<double>(i));
+//         log_comb += std::log(static_cast<double>(k) +
+//         static_cast<double>(i));
 //     }
 
 //     // Subtract precomputed lgamma(r)
@@ -29,7 +29,7 @@ double compute_log_comb(int k, T r) {
 double compute_log_comb(int k, int r, double lgamma_r) {
     double log_comb = 0.0;
 
-    if(k < 0 || r <= 0){
+    if (k < 0 || r <= 0) {
         return -std::numeric_limits<double>::infinity();
     }
 

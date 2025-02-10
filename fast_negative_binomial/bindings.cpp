@@ -1,8 +1,8 @@
-#include <vector>
-
+#include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <pybind11/eigen.h>
+
+#include <vector>
 
 #include "fast_nb.cpp"
 
@@ -13,23 +13,23 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     // Overload all of these
 
-    m.def("negative_binomial",
-          [](int k, int r, double p) -> double {
-              return nb_base<int>(k, r, p);
-          },
-          py::arg("k"), py::arg("r"), py::arg("p"),
-          "Compute the Negative Binomial PMF.\n\n"
-          "Parameters:\n"
-          "    k (int): Number of failures.\n"
-          "    r (int): Number of successes.\n"
-          "    p (float): Probability of success on an individual trial.\n\n"
-          "Returns:\n"
-          "    float: The PMF value.");
+    m.def(
+        "negative_binomial",
+        [](int k, int r, double p) -> double { return nb_base<int>(k, r, p); },
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        "Compute the Negative Binomial PMF.\n\n"
+        "Parameters:\n"
+        "    k (int): Number of failures.\n"
+        "    r (int): Number of successes.\n"
+        "    p (float): Probability of success on an individual trial.\n\n"
+        "Returns:\n"
+        "    float: The PMF value.");
 
-    m.def("negative_binomial",
+    m.def(
+        "negative_binomial_vec",
         [](std::vector<int> k, int r, double p) -> std::vector<double> {
-        return nb_base_vec<int>(k, r, p);
-    },
+            return nb_base_vec<int>(k, r, p);
+        },
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
@@ -43,10 +43,29 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 List[float]: The PMF values.
         )pbdoc");
 
-    m.def("negative_binomial_eigen",
+    m.def(
+        "negative_binomial_boost_vec",
+        [](std::vector<int> k, double r, double p) -> std::vector<double> {
+            return nb_boost_vec(k, r, p);
+        },
+        py::arg("k"), py::arg("r"), py::arg("p"),
+        R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Number of failures for each case.
+                r (int): Number of successes.
+                p (float): Probability of success on an individual trial.
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    m.def(
+        "negative_binomial_eigen",
         [](Eigen::VectorXi k, int r, double p) -> Eigen::VectorXd {
-        return nb_base_vec_eigen<int>(k, r, p);
-    },
+            return nb_base_vec_eigen_blocks<int>(k, r, p);
+        },
         py::arg("k"), py::arg("r"), py::arg("p"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
@@ -66,31 +85,52 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     // Overload the vector form of these also.
 
-    m.def("negative_binomial2", py::overload_cast<int, double, double>(&nb2_base),
-        py::arg("k"), py::arg("r"), py::arg("p"),
-        R"pbdoc(
+    m.def("negative_binomial2",
+          py::overload_cast<int, double, double>(&nb2_base), py::arg("k"),
+          py::arg("m"), py::arg("r"),
+          R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
 
             Parameters:
                 k (int): Observation
+                p (float): Overdispersion of distribution
                 r (float): Concentration of distribution
-                p (float): Mean of distribution
 
             Returns:
                 float: The PMF values.
         )pbdoc");
 
-    m.def("negative_binomial2", py::overload_cast<std::vector<int>, double, double>(&nb2_base_vec),
-        py::arg("k"), py::arg("r"), py::arg("p"),
+    m.def("negative_binomial2_vec",
+          py::overload_cast<std::vector<int>, double, double>(&nb2_base_vec),
+          py::arg("k"), py::arg("m"), py::arg("r"),
+          R"pbdoc(
+            Compute the Negative Binomial PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Observations
+                m (float): Overdispersion of distribution
+                r (float): Concentration of distribution
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    m.def(
+        "negative_binomial2",
+        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+            return nb2_base_vec_eigen_blocks_no_copy(k, m, r);
+        },
+        py::arg("k"), py::arg("m"), py::arg("r"),
         R"pbdoc(
             Compute the Negative Binomial PMF for a list of k values.
 
             Parameters:
                 k (List[int]): Observations
+                m (float): Overdispersion of distribution
                 r (float): Concentration of distribution
-                p (float): Mean of distribution
 
             Returns:
                 List[float]: The PMF values.
         )pbdoc");
+
 }

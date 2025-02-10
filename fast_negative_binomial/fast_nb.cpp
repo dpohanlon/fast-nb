@@ -1,18 +1,4 @@
-#include <vector>
-#include <cmath>
-#include <numeric>
-
-#include <iostream>
-#include <cmath>
-#include <limits>
-#include <iomanip>
-#include <map>
-#include <tuple>
-
-#include <cmath>
-
-#include "utils.hpp"
-#include "base.hpp"
+#include "fast_nb.hpp"
 
 double compute_log_comb_sterling(int k, int r) {
     static const double lgamma_r = lgamma_stirling(r);  // Precompute lgamma(r)
@@ -26,9 +12,8 @@ double compute_log_comb_sterling(int k, int r) {
         double log_k = std::log(k);
         double log_k_r = std::log(k + r);
 
-        return (k + r - 0.5) * log_k_r - (k + r)
-             - (k + 0.5) * log_k + k
-             - lgamma_r;
+        return (k + r - 0.5) * log_k_r - (k + r) - (k + 0.5) * log_k + k -
+               lgamma_r;
     }
 }
 
@@ -53,7 +38,8 @@ double negative_binomial_pmf_stirling(int k, int r, double p) {
     const double log_p = std::log(p);
     const double log_1_minus_p = std::log(1.0 - p);
 
-    double log_comb = lgamma_stirling(k + r) - lgamma_stirling(r) - lgamma_stirling(k + 1);
+    double log_comb =
+        lgamma_stirling(k + r) - lgamma_stirling(r) - lgamma_stirling(k + 1);
 
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
