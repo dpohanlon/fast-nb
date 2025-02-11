@@ -57,6 +57,7 @@ endif()
 
 # Create a library for the core functionality
 add_library(fast_nb_lib STATIC fast_negative_binomial/fast_nb.cpp)
+add_library(FastNB::fast_nb_lib ALIAS fast_nb_lib)
 
 # Specify include directories for the library
 #target_include_directories(fast_nb_lib PUBLIC fast_negative_binomial)
@@ -70,8 +71,8 @@ add_executable(fast_nb fast_negative_binomial/main.cpp)
 #)
 
 target_include_directories(fast_nb_lib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fast_negative_binomial>
-    $<INSTALL_INTERFACE:include/fast_negative_binomial>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
     ${Boost_INCLUDE_DIRS}
 )
 

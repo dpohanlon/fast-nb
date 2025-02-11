@@ -17,7 +17,7 @@
 // Compute gradients block-wise for d(logNB)/dp and d(logNB)/dr.
 //
 //   d(logNB)/dp =  r/p  -  k/(1-p)
-//   d(logNB)/dr =  1  +  digamma(r)  +  digamma(k + r)
+//   d(logNB)/dr =  log(p)  -  digamma(r)  +  digamma(k + r)
 //
 // We reuse the previously computed gradient if k_block[i] repeats.
 inline void compute_grad_block(const FixedVectorXi &k_block,
@@ -32,7 +32,7 @@ inline void compute_grad_block(const FixedVectorXi &k_block,
         } else {
             double val_kr = boost::math::digamma(static_cast<double>(k_block[i]) + r);
             grad_p_block[i] = r / p - static_cast<double>(k_block[i]) / (1.0 - p);
-            grad_r_block[i] = 1.0 + digamma_r + val_kr;
+            grad_r_block[i] = std::log(p) - digamma_r + val_kr;
         }
     }
 }
@@ -77,7 +77,7 @@ Eigen::MatrixXd process_grad_remaining(const Eigen::VectorXi &k,
         } else {
             double val_kr = boost::math::digamma(static_cast<double>(k[start + i]) + r);
             out(i, 0) = r / p - static_cast<double>(k[start + i]) / (1.0 - p);
-            out(i, 1) = 1.0 + digamma_r + val_kr;
+            out(i, 1) = std::log(p) - digamma_r + val_kr;
         }
     }
 
@@ -85,7 +85,7 @@ Eigen::MatrixXd process_grad_remaining(const Eigen::VectorXi &k,
 }
 
 template <typename T>
-Eigen::MatrixXd nb_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
+Eigen::MatrixXd log_nb_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
                                                      T r,
                                                      double p) {
     // Sort k in-place
@@ -119,35 +119,35 @@ Eigen::MatrixXd nb_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi>
 }
 
 template <typename T>
-Eigen::MatrixXd nb_gradient_vec_eigen_blocks(const Eigen::VectorXi &k_in,
+Eigen::MatrixXd log_nb_gradient_vec_eigen_blocks(const Eigen::VectorXi &k_in,
                                              T r,
                                              double p) {
     Eigen::VectorXi k_copy = k_in;
-    return nb_gradient_vec_eigen_blocks_no_copy(k_copy, r, p);
+    return log_nb_gradient_vec_eigen_blocks_no_copy(k_copy, r, p);
 }
 
-Eigen::VectorXd nb2_gradient__vec_eigen_blocks(const Eigen::VectorXi &k, double m,
+Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
                                           double r) {
     // m : mean
     // r : concentration
 
     double p = prob(m, r);
 
-    return nb_gradient_vec_eigen_blocks(k, r, p);
+    return log_nb_gradient_vec_eigen_blocks(k, r, p);
 }
 
-Eigen::VectorXd nb2_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
+Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
                                                   double r) {
     // m : mean
     // r : concentration
 
     double p = prob(m, r);
 
-    return nb_gradient_vec_eigen_blocks_no_copy(k, r, p);
+    return log_nb_gradient_vec_eigen_blocks_no_copy(k, r, p);
 }
 
 template <typename T>
-Eigen::MatrixXd zinb_gradient_vec_eigen_blocks_post_process_select(const Eigen::VectorXi &k_in,
+Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(const Eigen::VectorXi &k_in,
                                                                    double m,
                                                                    double r,
                                                                    double alpha) {
@@ -155,7 +155,7 @@ Eigen::MatrixXd zinb_gradient_vec_eigen_blocks_post_process_select(const Eigen::
     double p = prob(m, r);
 
     // Probably quite slow to do it this way
-    Eigen::MatrixXd nb_grad = nb_gradient_vec_eigen_blocks(k_in, r, p);
+    Eigen::MatrixXd nb_grad = log_nb_gradient_vec_eigen_blocks(k_in, r, p);
     Eigen::VectorXd nb_probs = nb_base_vec_eigen_blocks(k_in, r, p);
 
     Eigen::MatrixXd zinb_grad(k_in.size(), 3);
