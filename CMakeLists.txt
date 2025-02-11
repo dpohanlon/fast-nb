@@ -26,7 +26,10 @@ endif()
 
 find_package(Python 3.9 COMPONENTS Interpreter Development.Module REQUIRED)
 #find_package(pybind11 CONFIG REQUIRED)
-add_subdirectory(extern/pybind11)
+#add_subdirectory(extern/pybind11)
+if(NOT TARGET pybind11::module)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11)
+endif()
 
 # Find Threads
 find_package(Threads REQUIRED)
