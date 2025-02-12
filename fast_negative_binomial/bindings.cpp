@@ -134,6 +134,24 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         )pbdoc");
 
     m.def(
+        "log_negative_binomial2",
+        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+            return log_nb2_base_vec_eigen_blocks_no_copy(k, m, r);
+        },
+        py::arg("k"), py::arg("m"), py::arg("r"),
+        R"pbdoc(
+            Compute the Negative Binomial log PMF for a list of k values.
+
+            Parameters:
+                k (List[int]): Observations
+                m (float): Mean of distribution
+                r (float): Concentration of distribution
+
+            Returns:
+                List[float]: The PMF values.
+        )pbdoc");
+
+    m.def(
         "log_negative_binomial2_jac",
         [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::MatrixXd {
             return log_nb2_gradient_vec_eigen_blocks(k, m, r);
