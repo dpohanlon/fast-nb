@@ -133,7 +133,15 @@ Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks(const Eigen::VectorXi &k, doub
 
     double p = prob(m, r);
 
-    return log_nb_gradient_vec_eigen_blocks(k, r, p);
+    Eigen::MatrixXd jac = log_nb_gradient_vec_eigen_blocks(k, r, p);
+
+    // Chain rule to go from d(logNB)/dp to d(logNB2)/dm
+
+    double dp_dm = -r / ((m + r) * (m + r));
+
+    jac.col(0) = jac.col(0).array() * dp_dm;
+
+    return jac;
 }
 
 Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
@@ -143,7 +151,15 @@ Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::Vect
 
     double p = prob(m, r);
 
-    return log_nb_gradient_vec_eigen_blocks_no_copy(k, r, p);
+    Eigen::MatrixXd jac = log_nb_gradient_vec_eigen_blocks_no_copy(k, r, p);
+
+    // Chain rule to go from d(logNB)/dp to d(logNB2)/dm
+
+    double dp_dm = -r / ((m + r) * (m + r));
+
+    jac.col(0) = jac.col(0).array() * dp_dm;
+
+    return jac;
 }
 
 template <typename T>
@@ -156,6 +172,13 @@ Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(const Eig
 
     // Probably quite slow to do it this way
     Eigen::MatrixXd nb_grad = log_nb_gradient_vec_eigen_blocks(k_in, r, p);
+
+    // Chain rule to go from d(logNB)/dp to d(logNB2)/dm
+
+    double dp_dm = -r / ((m + r) * (m + r));
+
+    nb_grad.col(0) = nb_grad.col(0).array() * dp_dm;
+
     Eigen::VectorXd nb_probs = nb_base_vec_eigen_blocks(k_in, r, p);
 
     Eigen::MatrixXd zinb_grad(k_in.size(), 3);
