@@ -175,7 +175,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         [](Eigen::VectorXi & data, double m, double r, double learning_rate, int max_iterations) -> std::pair<double, double> {
             return optimise(data, m, r, learning_rate, max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.01, py::arg("max_iterations") = 1000,
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 
@@ -195,7 +195,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         [](Eigen::MatrixXi & data, double m, double r, double learning_rate, int max_iterations) -> std::vector<std::pair<double, double>> {
             return optimise_all_genes(data, m, r, learning_rate, max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.01, py::arg("max_iterations") = 1000,
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 

@@ -7,7 +7,7 @@
 #include "eigen_nb.hpp"
 #include "eigen_nb_jac.hpp"
 
-std::pair<double, double> optimise(Eigen::VectorXi & k, double m = 10., double r = 10., double learning_rate = 1E-2, int max_iterations = 1000) {
+std::pair<double, double> optimise(Eigen::VectorXi & k, double m = 10., double r = 10., double learning_rate = 0.1, int max_iterations = 1000) {
 
     const double tolerance = 1e-6;
 
@@ -17,16 +17,16 @@ std::pair<double, double> optimise(Eigen::VectorXi & k, double m = 10., double r
         double total_log_lik = -log_vals.sum();
 
         Eigen::MatrixXd grad_matrix = log_nb2_gradient_vec_eigen_blocks_no_copy(k, m, r);
-        Eigen::Vector2d grad = -grad_matrix.colwise().sum();
+        Eigen::Vector2d grad = -grad_matrix.colwise().mean();
 
-        if (grad.norm() < tolerance) {
-            break;
-        }
+        // if (grad.norm() < tolerance) {
+        //     break;
+        // }
 
         m = m - learning_rate * grad[0];
         r = r - learning_rate * grad[1];
 
-        m = std::max(m, 1e-8);
+        m = std::max(m, 1.0);
         r = std::max(r, 1e-8);
 
     }
