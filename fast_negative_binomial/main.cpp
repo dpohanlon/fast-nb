@@ -37,7 +37,6 @@ static void BM_NegativeBinomialBoostPMF(benchmark::State& state) {
     std::vector<int> k_vals = get_poisson(num_samples);
 
     for (auto _ : state) {
-
         std::vector<double> results = nb_boost_vec(k_vals, r, p);
 
         benchmark::DoNotOptimize(results);
@@ -45,7 +44,7 @@ static void BM_NegativeBinomialBoostPMF(benchmark::State& state) {
     state.SetComplexityN(state.range(0));
 }
 
-static void BM_NegativeBinomialPMF(benchmark::State &state) {
+static void BM_NegativeBinomialPMF(benchmark::State& state) {
     int r = 50;
     float p = 0.7;
 
@@ -56,7 +55,8 @@ static void BM_NegativeBinomialPMF(benchmark::State &state) {
     auto k_vals_eigen = stdVectorToEigenCopy(k_vals);
 
     for (auto _ : state) {
-        Eigen::VectorXd results = nb2_base_vec_eigen_blocks_no_copy(k_vals_eigen, r, p);
+        Eigen::VectorXd results =
+            nb2_base_vec_eigen_blocks_no_copy(k_vals_eigen, r, p);
 
         benchmark::DoNotOptimize(results);
     }

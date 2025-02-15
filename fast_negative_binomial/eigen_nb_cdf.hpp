@@ -3,6 +3,7 @@
 #include <omp.h>
 
 #include <Eigen/Dense>
+#include <boost/math/special_functions/beta.hpp>
 #include <boost/sort/sort.hpp>
 #include <boost/sort/spreadsort/spreadsort.hpp>
 #include <cmath>
@@ -10,15 +11,12 @@
 
 #include "utils.hpp"
 
-#include <boost/math/special_functions/beta.hpp>
-
 inline double nb_cdf_single(int k, double r, double p) {
     return boost::math::ibeta(r, static_cast<double>(k) + 1.0, p);
 }
 
 inline void compute_cdf_block(const FixedVectorXi &k_block,
-                              FixedVectorXd &cdf_block,
-                              double r, double p) {
+                              FixedVectorXd &cdf_block, double r, double p) {
     for (int i = 0; i < BLOCK_SIZE; ++i) {
         if (i > 0 && k_block[i] == k_block[i - 1]) {
             cdf_block[i] = cdf_block[i - 1];
@@ -31,16 +29,15 @@ inline void compute_cdf_block(const FixedVectorXi &k_block,
     }
 }
 
-void process_cdf_blocks(const Eigen::VectorXi &k,
-                        Eigen::VectorXd &results,
-                        double r, double p,
-                        int num_blocks) {
-    #pragma omp parallel
+void process_cdf_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
+                        double r, double p, int num_blocks) {
+#pragma omp parallel
     {
-        #pragma omp for schedule(static)
+#pragma omp for schedule(static)
         for (int block = 0; block < num_blocks; ++block) {
             int start = block * BLOCK_SIZE;
-            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
+            FixedVectorXi k_block =
+                Eigen::Map<const FixedVectorXi>(k.data() + start);
 
             FixedVectorXd cdf_block;
             compute_cdf_block(k_block, cdf_block, r, p);
@@ -50,11 +47,8 @@ void process_cdf_blocks(const Eigen::VectorXi &k,
     }
 }
 
-Eigen::VectorXd process_cdf_remaining(const Eigen::VectorXi &k,
-                                      int start,
-                                      int remaining,
-                                      double r,
-                                      double p) {
+Eigen::VectorXd process_cdf_remaining(const Eigen::VectorXi &k, int start,
+                                      int remaining, double r, double p) {
     Eigen::VectorXd out(remaining);
     for (int i = 0; i < remaining; ++i) {
         if (i > 0 && k[start + i] == k[start + i - 1]) {
@@ -70,8 +64,7 @@ Eigen::VectorXd process_cdf_remaining(const Eigen::VectorXi &k,
 
 template <typename T>
 Eigen::VectorXd nb_cdf_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
-                                                T r,
-                                                double p) {
+                                                T r, double p) {
     // Sort k in-place
     boost::sort::parallel_stable_sort(k.data(), k.data() + k.size());
 
@@ -95,30 +88,26 @@ Eigen::VectorXd nb_cdf_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
 }
 
 template <typename T>
-Eigen::VectorXd nb_cdf_vec_eigen_blocks(const Eigen::VectorXi &k_in,
-                                        T r,
+Eigen::VectorXd nb_cdf_vec_eigen_blocks(const Eigen::VectorXi &k_in, T r,
                                         double p) {
     Eigen::VectorXi k_copy = k_in;
     return nb_cdf_vec_eigen_blocks_no_copy(k_copy, r, p);
 }
 
-Eigen::VectorXd nb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k,
-                                         double m,
+Eigen::VectorXd nb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
                                          double r) {
     double p = prob(m, r);
     return nb_cdf_vec_eigen_blocks(k, r, p);
 }
 
 Eigen::VectorXd nb2_cdf_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
-                                                 double m,
-                                                 double r) {
+                                                 double m, double r) {
     double p = prob(m, r);
     return nb_cdf_vec_eigen_blocks_no_copy(k, r, p);
 }
 
 Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
-                                         double r, double alpha) {
-
+                                           double r, double alpha) {
     double p = prob(m, r);
     Eigen::VectorXi k_copy = k;
 
@@ -126,8 +115,9 @@ Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
     Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k_copy.size());
     Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k_copy.size(), alpha);
 
-    //Adjust for zero-inflation
-    Eigen::VectorXd zero_inflation = (k_copy.array() == 0).select(alpha_vec, zero_vec);
+    // Adjust for zero-inflation
+    Eigen::VectorXd zero_inflation =
+        (k_copy.array() == 0).select(alpha_vec, zero_vec);
     Eigen::VectorXd scaled_cdf = cdf * (1.0 - alpha);
     Eigen::VectorXd zinb_cdf = scaled_cdf.array() + zero_inflation.array();
 

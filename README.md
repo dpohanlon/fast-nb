@@ -140,7 +140,7 @@ Contributing
 If you've made modifications, reformat with `clang-format`:
 
 ```bash
-clang-format -i -style=file fast_negative_binomial/*
+clang-format -i -style=file fast_negative_binomial/*pp
 ```
 
 Optimisations

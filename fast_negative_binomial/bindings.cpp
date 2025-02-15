@@ -118,7 +118,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "negative_binomial2",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::VectorXd {
             return nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -136,7 +137,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "log_negative_binomial2",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::VectorXd {
             return log_nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -154,7 +156,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "log_negative_binomial2_jac",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::MatrixXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::MatrixXd {
             return log_nb2_gradient_vec_eigen_blocks(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -172,10 +175,12 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "optimise",
-        [](Eigen::VectorXi & data, double m, double r, double learning_rate, int max_iterations) -> std::pair<double, double> {
+        [](Eigen::VectorXi& data, double m, double r, double learning_rate,
+           int max_iterations) -> std::pair<double, double> {
             return optimise(data, m, r, learning_rate, max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 
@@ -192,10 +197,13 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "optimise_all_genes",
-        [](Eigen::MatrixXi & data, double m, double r, double learning_rate, int max_iterations) -> std::vector<std::pair<double, double>> {
-            return optimise_all_genes(data, m, r, learning_rate, max_iterations);
+        [](Eigen::MatrixXi& data, double m, double r, double learning_rate,
+           int max_iterations) -> std::vector<std::pair<double, double>> {
+            return optimise_all_genes(data, m, r, learning_rate,
+                                      max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0, py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 

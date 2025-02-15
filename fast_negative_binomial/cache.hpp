@@ -41,13 +41,10 @@ class LgammaCache {
     //     }
     // }
 
-    double lgamma(double x)
-    {
-        return std::lgamma(x);
-    }
+    double lgamma(double x) { return std::lgamma(x); }
 
    private:
-    double current_k_;          // The current largest k computed
+    double current_k_;       // The current largest k computed
     double current_lgamma_;  // The current lgamma(k) value
     int relative_cost_;
 };
