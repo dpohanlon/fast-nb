@@ -6,7 +6,9 @@ from .fast_negative_binomial import (
     negative_binomial_eigen,
     negative_binomial2_vec,
     negative_binomial_boost_vec,
-    log_negative_binomial2_jac
+    log_negative_binomial2_jac,
+    optimise,
+    optimise_all_genes
 )
 
 __all__ = [
@@ -17,5 +19,7 @@ __all__ = [
     "negative_binomial_vec",
     "negative_binomial2_vec",
     "negative_binomial_boost_vec",
-    "log_negative_binomial2_jac"
+    "log_negative_binomial2_jac",
+    "optimise",
+    "optimise_all_genes"
 ]

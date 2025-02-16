@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "fast_nb.cpp"
+#include "optimise.hpp"
 
 namespace py = pybind11;
 
@@ -117,7 +118,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "negative_binomial2",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::VectorXd {
             return nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -135,7 +137,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "log_negative_binomial2",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::VectorXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::VectorXd {
             return log_nb2_base_vec_eigen_blocks_no_copy(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -153,7 +156,8 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "log_negative_binomial2_jac",
-        [](Eigen::Ref<Eigen::VectorXi> k, double m, double r) -> Eigen::MatrixXd {
+        [](Eigen::Ref<Eigen::VectorXi> k, double m,
+           double r) -> Eigen::MatrixXd {
             return log_nb2_gradient_vec_eigen_blocks(k, m, r);
         },
         py::arg("k"), py::arg("m"), py::arg("r"),
@@ -169,4 +173,48 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 np.array: Gradients of m, r. Nsamples x 2
         )pbdoc");
 
+    m.def(
+        "optimise",
+        [](Eigen::VectorXi& data, double m, double r, double learning_rate,
+           int max_iterations) -> std::pair<double, double> {
+            return optimise(data, m, r, learning_rate, max_iterations);
+        },
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
+        R"pbdoc(
+            Fit a negative binomial pmf on the data
+
+            Parameters:
+                k (np.array[int]): Observations
+                m (float) : initial m value
+                r (float) : initial r value
+                learning_rate (float): Learning rate for gradient descent
+                max_iterations (float): Max number of gradient descent iterations
+
+            Returns:
+                np.array: optimised m, r
+        )pbdoc");
+
+    m.def(
+        "optimise_all_genes",
+        [](Eigen::MatrixXi& data, double m, double r, double learning_rate,
+           int max_iterations) -> std::vector<std::pair<double, double>> {
+            return optimise_all_genes(data, m, r, learning_rate,
+                                      max_iterations);
+        },
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
+        R"pbdoc(
+            Fit a negative binomial pmf on the data
+
+            Parameters:
+                k (np.array[int]): Counts matrix, nGenes x nCells ????
+                m (float) : initial m value
+                r (float) : initial r value
+                learning_rate (float): Learning rate for gradient descent
+                max_iterations (float): Max number of gradient descent iterations
+
+            Returns:
+                np.array: optimised m, r for each gene
+        )pbdoc");
 }

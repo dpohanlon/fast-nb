@@ -72,8 +72,9 @@ double nb_base_fixed_r(int k, int r, double p, double lgamma_r) {
     return std::exp(log_comb + k * log_1_minus_p + r * log_p);
 }
 
-double nb_base_fixed_r_opt(int k, int r, double p, double lgamma_r,
-                           LgammaCache &lgamma_kr, LgammaCache &lgamma_k1, bool log = false) {
+double nb_base_fixed_r_opt(int k, double r, double p, double lgamma_r,
+                           LgammaCache &lgamma_kr, LgammaCache &lgamma_k1,
+                           bool log = false) {
     if (k < 0) {
         return 0.0;
     }

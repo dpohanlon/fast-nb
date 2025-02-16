@@ -4,8 +4,8 @@
 
 #include "base_nb.hpp"
 #include "eigen_nb.hpp"
-#include "eigen_nb_jac.hpp"
 #include "eigen_nb_cdf.hpp"
+#include "eigen_nb_jac.hpp"
 #include "utils.hpp"
 #include "vector_nb.hpp"
 

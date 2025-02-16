@@ -45,6 +45,26 @@ nb = negative_binomial2(ks, m, r)
 
 To avoid unncessary copies, these functions sort the vector of observations in place. If this is a problem, make a copy beforehand.
 
+There is also a simple maximum likelihood parameter optimisation routine included for convenience, using the Jacobian with respect to `m` and `r` (the `nb2` parameterisation). This also has a function parallelised over input datasets.
+
+```python
+
+from fast_negative_binomial import optimise, optimise_all_genes
+
+# Generate some data
+
+data = np.random.poisson(10, (100, 1000))
+
+# Optimise the parameters for a single gene
+
+m, r = optimise(data[0])
+
+# Optimise the parameters for all genes (m, r)
+
+results = optimise_all_genes(data)
+
+```
+
 Performance
 ====
 
@@ -140,7 +160,7 @@ Contributing
 If you've made modifications, reformat with `clang-format`:
 
 ```bash
-clang-format -i -style=file fast_negative_binomial/*
+clang-format -i -style=file fast_negative_binomial/*pp
 ```
 
 Optimisations

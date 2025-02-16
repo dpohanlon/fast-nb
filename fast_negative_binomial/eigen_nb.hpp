@@ -67,8 +67,8 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(const Eigen::VectorXi &k, T r,
         if (k[i] == k_prev) {
             results[i] = results[i - 1];
         } else {
-            results[i] =
-                nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr, lgamma_k1, log);
+            results[i] = nb_base_fixed_r_opt(k[i], r, p, lgamma_r, lgamma_kr,
+                                             lgamma_k1, log);
         }
         k_prev = k[i];
     }
@@ -91,18 +91,17 @@ inline void compute_pmf_block(const FixedVectorXi &k_block,
                               FixedVectorXd &res_block, const double lgamma_r,
                               const double log_p, const double log_1_minus_p,
                               const double r, LgammaCache &lgamma_kr,
-                              LgammaCache &lgamma_k1,
-                              bool log = false) {
+                              LgammaCache &lgamma_k1, bool log = false) {
     for (int i = 0; i < BLOCK_SIZE; ++i) {
         if ((i > 0) && (k_block[i - 1] == k_block[i])) {
             res_block[i] = res_block[i - 1];
         } else {
             const double log_comb = lgamma_kr.lgamma(k_block[i] + r) -
                                     lgamma_r - lgamma_k1.lgamma(k_block[i] + 1);
-            double res = log_comb + static_cast<double>(k_block[i]) * log_1_minus_p +
-            r * log_p;
+            double res = log_comb +
+                         static_cast<double>(k_block[i]) * log_1_minus_p +
+                         r * log_p;
             res_block[i] = log ? res : std::exp(res);
-
         }
     }
 }
@@ -125,7 +124,6 @@ void process_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
                     const int num_blocks, bool log = false) {
 #pragma omp parallel
     {
-
         // Each thread should have its own cache
         LgammaCache lgamma_kr;
         LgammaCache lgamma_k1;
@@ -175,9 +173,9 @@ Eigen::VectorXd process_remaining(const Eigen::VectorXi &k, const int start,
  * @return Eigen::VectorXd The computed PMF values.
  */
 template <typename T>
-Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, T r,
-                                                 double p, bool log = false) {
-
+Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
+                                                 T r, double p,
+                                                 bool log = false) {
     // Precompute constants
     const double r_d = static_cast<double>(r);
     const double lgamma_r = std::lgamma(r_d);
@@ -211,7 +209,7 @@ Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, 
 }
 
 template <typename T>
-Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi & k_in, T r,
+Eigen::VectorXd nb_base_vec_eigen_blocks(const Eigen::VectorXi &k_in, T r,
                                          double p) {
     // Copy to avoid modifying the input vector - there is some overhead here
     Eigen::VectorXi k = k_in;
@@ -240,8 +238,8 @@ Eigen::VectorXd nb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
     return nb_base_vec_eigen_blocks(k, r, p);
 }
 
-Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
-                                                  double r) {
+Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
+                                                  double m, double r) {
     // m : mean
     // r : concentration
 
@@ -250,8 +248,8 @@ Eigen::VectorXd nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
     return nb_base_vec_eigen_blocks_no_copy(k, r, p);
 }
 
-Eigen::VectorXd log_nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k, double m,
-                                                  double r) {
+Eigen::VectorXd log_nb2_base_vec_eigen_blocks_no_copy(
+    Eigen::Ref<Eigen::VectorXi> k, double m, double r) {
     // m : mean
     // r : concentration
 
@@ -261,7 +259,7 @@ Eigen::VectorXd log_nb2_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi
 }
 
 Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
-                                           double r, double alpha) {
+                                            double r, double alpha) {
     // m : mean
     // r : concentration
 
@@ -274,7 +272,8 @@ Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
     Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k.size());
     Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k.size(), alpha);
 
-    Eigen::VectorXd zero_inflation = (k.array() == 0).select(alpha_vec, zero_vec);
+    Eigen::VectorXd zero_inflation =
+        (k.array() == 0).select(alpha_vec, zero_vec);
     Eigen::VectorXd zinb_probs = scaled_probs.array() + zero_inflation.array();
 
     return zinb_probs;
