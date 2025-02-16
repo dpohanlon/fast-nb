@@ -1,5 +1,6 @@
 #pragma once
 
+#include "omp.h"
 #include <Eigen/Dense>
 
 // Precompute log combinatorial coefficients for small values of k, r.
@@ -19,6 +20,17 @@ constexpr int BLOCK_SIZE = 2048;
 // Define fixed-size Eigen vector types for integers and doubles
 using FixedVectorXi = Eigen::Matrix<int, BLOCK_SIZE, 1>;
 using FixedVectorXd = Eigen::Matrix<double, BLOCK_SIZE, 1>;
+
+void set_omp_threads()
+{
+    if (std::getenv("OMP_NUM_THREADS") == nullptr) {
+        unsigned int numCores = std::thread::hardware_concurrency();
+        if (numCores == 0) {
+            numCores = 1; // Fallback if hardware_concurrency cannot detect cores.
+        }
+        omp_set_num_threads(static_cast<int>(numCores / 2));
+    }
+}
 
 // 1. Eigen to std::vector (Copy)
 template <typename Derived>
