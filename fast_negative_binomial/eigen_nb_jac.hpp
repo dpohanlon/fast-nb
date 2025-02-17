@@ -157,7 +157,6 @@ Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks_no_copy(
     return jac;
 }
 
-template <typename T>
 Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(
     const Eigen::VectorXi &k_in, double m, double r, double alpha) {
     double p = prob(m, r);
