@@ -217,4 +217,56 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
             Returns:
                 np.array: optimised m, r for each gene
         )pbdoc");
+
+    m.def(
+        "optimise_zi",
+        [](Eigen::VectorXi& data, double m, double r, double alpha,
+           double learning_rate,
+           int max_iterations) -> std::tuple<double, double, double> {
+            return optimise_zi(data, m, r, alpha, learning_rate,
+                               max_iterations);
+        },
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("alpha") = 0.1, py::arg("learning_rate") = 0.1,
+        py::arg("max_iterations") = 1000,
+        R"pbdoc(
+            Fit a negative binomial pmf on the data
+
+            Parameters:
+                k (np.array[int]): Observations
+                m (float) : initial m value
+                r (float) : initial r value
+                alpha (float) : initial alpha value
+                learning_rate (float): Learning rate for gradient descent
+                max_iterations (float): Max number of gradient descent iterations
+
+            Returns:
+                np.array: optimised m, r
+        )pbdoc");
+
+    m.def(
+        "optimise_all_genes_zi",
+        [](Eigen::MatrixXi& data, double m, double r, double alpha,
+           double learning_rate, int max_iterations)
+            -> std::vector<std::tuple<double, double, double>> {
+            return optimise_all_genes_zi(data, m, r, alpha, learning_rate,
+                                         max_iterations);
+        },
+        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("alpha") = 0.1, py::arg("learning_rate") = 0.1,
+        py::arg("max_iterations") = 1000,
+        R"pbdoc(
+            Fit a negative binomial pmf on the data
+
+            Parameters:
+                k (np.array[int]): Counts matrix, nGenes x nCells ????
+                m (float) : initial m value
+                r (float) : initial r value
+                alpha (float) : initial alpha value
+                learning_rate (float): Learning rate for gradient descent
+                max_iterations (float): Max number of gradient descent iterations
+
+            Returns:
+                np.array: optimised m, r for each gene
+        )pbdoc");
 }

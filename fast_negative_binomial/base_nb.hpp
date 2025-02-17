@@ -100,3 +100,14 @@ double nb2_base(int k, double m, double r) {
 
     return nb_base(k, r, p);
 }
+
+template <typename T>
+double zinb2_base(T k, double m, double r, double alpha) {
+    // m : mean
+    // r : concentration
+
+    double p = prob(m, r);
+    double nb_prob = nb_base(k, r, p);
+
+    return (k == 0) ? ((1.0 - alpha) * nb_prob + alpha) : ((1.0 - alpha) * nb_prob);
+}
