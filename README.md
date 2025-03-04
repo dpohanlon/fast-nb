@@ -11,6 +11,9 @@ In Python, two versions of the negative-binomial distribution are given, each of
 export OMP_NUM_THREADS=4
 ```
 
+PMFs
+----
+
 The first function is formulated as the number of failures `r`, and number of successes `k`, with probability of success `p`,
 
 $$ f(k;r,p) = \binom{k+r - 1}{k}(1 - p)^kp^r $$
@@ -44,6 +47,37 @@ nb = negative_binomial2(ks, m, r)
 ```
 
 To avoid unncessary copies, these functions sort the vector of observations in place. If this is a problem, make a copy beforehand.
+
+Zero inflated versions of the functions are also provided (for example, `negative_binomial2_zi`, which take an additional parameter, $\alpha$. This represents the probability of the zero observation distribution in the mixture model. The form of this distribution is
+
+$$ p(k) = (1-\alpha) p_{NB}(k) + \alpha\, \mathbb{I}_{\{k=0\}}. $$
+
+CDFs
+----
+
+The cumulative distribution function is also provided, that represents the total probability of observing a value less than or equal to the input value. It can be called similarly to the probability mass function:
+
+``` python
+from fast_negative_binomial import negative_binomial2_cdf
+
+nb_cdf = negative_binomial2_cdf(ks, m, r)
+
+```
+
+Jacobians
+---------
+
+The Jacobian (i.e., gradient)of the probability mass function with respect to `m` and `r` (and $\alpha$ in the case of the zero-inflated distribution) is also provided, for optimization purposes:
+
+``` python
+from fast_negative_binomial import negative_binomial2_jacobian
+
+nb_jacobian = negative_binomial2_jacobian(ks, m, r)
+
+```
+
+Optimisation
+---
 
 There is also a simple maximum likelihood parameter optimisation routine included for convenience, using the Jacobian with respect to `m` and `r` (the `nb2` parameterisation). This also has a function parallelised over input datasets.
 

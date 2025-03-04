@@ -47,7 +47,8 @@ if(ENABLE_BOOST)
     # set(BOOST_INCLUDEDIR "/path/to/boost/include")
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
-    find_package(Boost 1.65.0 REQUIRED)
+    set(Boost_USE_STATIC_LIBS ON)
+    find_package(Boost 1.70.0 REQUIRED system math)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")
