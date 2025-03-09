@@ -15,6 +15,11 @@ inline double nb_cdf_single(int k, double r, double p) {
     return boost::math::ibeta(r, static_cast<double>(k) + 1.0, p);
 }
 
+inline double nb2_cdf_single(int k, double mean, double concentration) {
+    double p = concentration / (mean + concentration);
+    return nb_cdf_single(k, concentration, p);
+}
+
 inline void compute_cdf_block(const FixedVectorXi &k_block,
                               FixedVectorXd &cdf_block, double r, double p) {
     for (int i = 0; i < BLOCK_SIZE; ++i) {

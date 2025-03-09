@@ -67,7 +67,7 @@ nb_cdf = negative_binomial2_cdf(ks, m, r)
 Jacobians
 ---------
 
-The Jacobian (i.e., gradient)of the probability mass function with respect to `m` and `r` (and $\alpha$ in the case of the zero-inflated distribution) is also provided, for optimization purposes:
+The Jacobian (the matrix of first order derivatives with respect to each parameter) of the probability mass function with respect to `m` and `r` (and $\alpha$ in the case of the zero-inflated distribution) is also provided, for optimization purposes:
 
 ``` python
 from fast_negative_binomial import negative_binomial2_jacobian
