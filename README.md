@@ -1,6 +1,17 @@
-# Fast negative-binomial distribution
+<p align="center">
+  <img width="315" height="274" src="assets/nb_logo.png">
+  <br>
+      A fast negative-binomial distribution for Python and C++
+</p>
 
-A fast negative-binomial distribution for Python and C++, optimised for small repeated integer counts such as those seen in single-cell RNA sequencing data.
+![Tests!](https://github.com/dpohanlon/fast_mi/actions/workflows/python-app.yml/badge.svg)
+
+------
+
+Intro
+=====
+
+This is a fast negative-binomial distribution for Python and C++, optimised for small repeated integer counts such as those seen in single-cell RNA sequencing data, and including zero inflation. Provided are functions for the probability mass function, cumulative distribution function, inverse cumulative distribution function, and the Jacobian of the PMF with respect to the parameters. Also included is a barebones maximum likelihood parameter optimisation routine.
 
 Usage
 =====
