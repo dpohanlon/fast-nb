@@ -86,6 +86,8 @@ int main() {
     // Run the accuracy test
     test_accuracy(tolerance, max_k, r_values, p_values);
 
+    // test_optimisation();
+
     return 0;
 }
 

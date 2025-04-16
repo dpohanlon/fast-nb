@@ -197,20 +197,22 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "optimise_all_genes",
-        [](Eigen::MatrixXi& data, double m, double r, double learning_rate,
-           int max_iterations) -> std::vector<std::pair<double, double>> {
-            return optimise_all_genes(data, m, r, learning_rate,
-                                      max_iterations);
+        [](Eigen::MatrixXi& data, Eigen::VectorXd& m_vec,
+        Eigen::VectorXd& r_vec, double learning_rate, int max_iterations)
+            -> std::vector<std::pair<double, double>> {
+            return optimise_all_genes(data, m_vec, r_vec, learning_rate,
+                                         max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
+        py::arg("data"), py::arg("m_vec"), py::arg("r_vec"),
         py::arg("learning_rate") = 0.1, py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 
             Parameters:
-                k (np.array[int]): Counts matrix, nGenes x nCells ????
-                m (float) : initial m value
-                r (float) : initial r value
+                k (np.array[int]): Observations
+                m (np.array[float]) : initial m value
+                r (np.array[float]) : initial r value
+                alpha (float) : initial alpha value
                 learning_rate (float): Learning rate for gradient descent
                 max_iterations (float): Max number of gradient descent iterations
 
@@ -246,23 +248,24 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
 
     m.def(
         "optimise_all_genes_zi",
-        [](Eigen::MatrixXi& data, double m, double r, double alpha,
-           double learning_rate, int max_iterations)
+        [](Eigen::MatrixXi& data, std::vector<double>& m_vec,
+        std::vector<double>& r_vec, std::vector<double>& alpha_vec,
+        double learning_rate, int max_iterations)
             -> std::vector<std::tuple<double, double, double>> {
-            return optimise_all_genes_zi(data, m, r, alpha, learning_rate,
+            return optimise_all_genes_zi(data, m_vec, r_vec, alpha_vec, learning_rate,
                                          max_iterations);
         },
-        py::arg("data"), py::arg("m") = 10.0, py::arg("r") = 10.0,
-        py::arg("alpha") = 0.1, py::arg("learning_rate") = 0.1,
+        py::arg("data"), py::arg("m_vec"), py::arg("r_vec"),
+        py::arg("alpha_vec"), py::arg("learning_rate") = 0.1,
         py::arg("max_iterations") = 1000,
         R"pbdoc(
             Fit a negative binomial pmf on the data
 
             Parameters:
                 k (np.array[int]): Counts matrix, nGenes x nCells ????
-                m (float) : initial m value
-                r (float) : initial r value
-                alpha (float) : initial alpha value
+                m (np.array[float]) : initial m value
+                r (np.array[float]) : initial r value
+                alpha (np.array[float]) : initial alpha value
                 learning_rate (float): Learning rate for gradient descent
                 max_iterations (float): Max number of gradient descent iterations
 

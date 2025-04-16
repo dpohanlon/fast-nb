@@ -87,6 +87,7 @@ for f in methods:
 
     ks = np.ascontiguousarray(nbinom.rvs(r, r / (m + r), size=100000).astype(np.int32))
 
+
     elapsed_time = timeit.timeit(f, number=repetitions)
 
     average_time = elapsed_time / repetitions

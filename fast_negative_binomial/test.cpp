@@ -8,6 +8,48 @@
 #include <tuple>
 #include <vector>
 
+#include "optimise.hpp"
+
+// Function to generate a matrix of counts from a truncated normal distribution.
+Eigen::MatrixXi generateTruncatedNormalMatrix(int rows, int cols, double mean, double std_dev) {
+    Eigen::MatrixXi mat(rows, cols);
+    // Using std::random_device to seed the generator.
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::normal_distribution<double> dist(mean, std_dev);
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            double sample = dist(rng);
+            // Truncate at 0.
+            int count = sample < 0.0 ? 0 : static_cast<int>(sample);
+            mat(i, j) = count;
+        }
+    }
+    return mat;
+}
+
+// void test_optimisation() {
+//     Eigen::MatrixXi matrix = generateTruncatedNormalMatrix(150, 10000, 50, 3);
+
+//     std::vector<double> m_vec(150, 50.);
+//     std::vector<double> r_vec(150, 10.0);
+
+//     try {
+//         // Call the optimisation function for all genes.
+//         auto optimized_params = optimise_all_genes(matrix, m_vec, r_vec);
+
+//         // Print the optimized parameters.
+//         for (size_t i = 0; i < optimized_params.size(); ++i) {
+//             std::cout << "Gene " << i
+//                       << ": Optimised m = " << optimized_params[i].first
+//                       << ", r = " << optimized_params[i].second << std::endl;
+//         }
+//     } catch (const std::exception& ex) {
+//         std::cerr << "Exception: " << ex.what() << std::endl;
+//     }
+// }
+
 // Function to test accuracy and collect divergences
 void test_accuracy(double tolerance, int max_k,
                    const std::vector<int> &r_values,
