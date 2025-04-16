@@ -75,7 +75,7 @@ std::tuple<double, double, double> optimise_zi(Eigen::VectorXi& k,
     return std::make_tuple(m, r, alpha);
 }
 
-std::vector<std::pair<double, double>> optimise_all_genes(
+std::pair<std::vector<double>, std::vector<double>> optimise_all_genes(
     Eigen::MatrixXi& k,  Eigen::VectorXd& m_vec,
     Eigen::VectorXd& r_vec, double learning_rate = 1E-2,
     int max_iterations = 1000) {
@@ -86,19 +86,20 @@ std::vector<std::pair<double, double>> optimise_all_genes(
         throw std::invalid_argument("Size of m_vec and r_vec must equal the number of genes (rows in k).");
     }
 
-    std::vector<std::pair<double, double>> optimized_params(num_genes);
+    std::vector<double> r_opt(num_genes);
+    std::vector<double> m_opt(num_genes);
 
-// #pragma omp parallel for schedule(static)
+    // Don't parallelise here, as it's done elsewhere within the loop
     for (int i = 0; i < num_genes; ++i) {
         Eigen::VectorXi gene_data = k.row(i).transpose();
-        optimized_params[i] = optimise(gene_data, m_vec[i], r_vec[i], learning_rate, max_iterations);
+        std::tie(r_opt[i], m_opt[i]) = optimise(gene_data, m_vec[i], r_vec[i], learning_rate, max_iterations);
     }
 
-    return optimized_params;
+    return std::make_pair(r_opt, m_opt);
 }
 
 
-std::vector<std::tuple<double, double, double>> optimise_all_genes_zi(
+std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> optimise_all_genes_zi(
     Eigen::MatrixXi& k, std::vector<double>& m_vec,
     std::vector<double>& r_vec, std::vector<double>& alpha_vec,
     double learning_rate = 1E-2, int max_iterations = 1000) {
@@ -109,13 +110,14 @@ std::vector<std::tuple<double, double, double>> optimise_all_genes_zi(
         throw std::invalid_argument("Size of m_vec, r_vec, and alpha_vec must equal the number of genes (rows in k).");
     }
 
-    std::vector<std::tuple<double, double, double>> optimized_params(num_genes);
+    std::vector<double> r_opt(num_genes);
+    std::vector<double> m_opt(num_genes);
+    std::vector<double> a_opt(num_genes);
 
-// #pragma omp parallel for schedule(static)
     for (int i = 0; i < num_genes; ++i) {
         Eigen::VectorXi gene_data = k.row(i).transpose();
-        optimized_params[i] = optimise_zi(gene_data, m_vec[i], r_vec[i], alpha_vec[i], learning_rate, max_iterations);
+        std::tie(r_opt[i], m_opt[i], a_opt[i]) = optimise_zi(gene_data, m_vec[i], r_vec[i], alpha_vec[i], learning_rate, max_iterations);
     }
 
-    return optimized_params;
+    return std::make_tuple(r_opt, m_opt, a_opt);
 }

@@ -199,7 +199,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         "optimise_all_genes",
         [](Eigen::MatrixXi& data, Eigen::VectorXd& m_vec,
         Eigen::VectorXd& r_vec, double learning_rate, int max_iterations)
-            -> std::vector<std::pair<double, double>> {
+            -> std::pair<std::vector<double>, std::vector<double>> {
             return optimise_all_genes(data, m_vec, r_vec, learning_rate,
                                          max_iterations);
         },
@@ -251,7 +251,7 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
         [](Eigen::MatrixXi& data, std::vector<double>& m_vec,
         std::vector<double>& r_vec, std::vector<double>& alpha_vec,
         double learning_rate, int max_iterations)
-            -> std::vector<std::tuple<double, double, double>> {
+            -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> {
             return optimise_all_genes_zi(data, m_vec, r_vec, alpha_vec, learning_rate,
                                          max_iterations);
         },
