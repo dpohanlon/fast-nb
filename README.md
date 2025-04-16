@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="105" height="91" src="assets/nb_logo.png">
+  <img width="210" height="182" src="assets/nb_logo.png">
   <br>
       A fast negative-binomial distribution for Python and C++
 </p>
