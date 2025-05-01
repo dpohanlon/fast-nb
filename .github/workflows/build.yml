@@ -83,7 +83,8 @@ jobs:
               run: |
                   pip install nose2
                   pip install scipy
-                  WHL_PATH=$(ls wheelhouse/fast_negative_binomial-0.1.0-cp${PYVER_NO_DOTS//./}*-manylinux_2_28_x86_64.whl)${PYVER_NO_DOTS//./}*.whl)
+                  PY_ABI_TAG=cp${PYVER_NO_DOTS//./}
+                  WHL_PATH=$(ls wheelhouse/fast_negative_binomial-0.1.0-${PY_ABI_TAG}*-manylinux_2_28_x86_64.whl)
                   pip install "$WHL_PATH"
                   cd tests
                   nose2
