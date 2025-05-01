@@ -37,8 +37,7 @@ constexpr auto LOG_COMB_TABLE = precompute_log_comb();
 constexpr double compute_log_comb(int k, int r) {
     // Ensure that k and r are non-negative and r > 0
     if (k < 0 || r <= 0) {
-        return -std::numeric_limits<double>::infinity();  // Handle invalid
-                                                          // cases appropriately
+        return -std::numeric_limits<double>::infinity();
     }
 
     if (k <= MAX_K && r <= MAX_R) {
@@ -65,8 +64,7 @@ double compute_log_comb_opt(int k, int r, double lgamma_r) {
 constexpr double compute_log_comb(int k, int r, double lgamma_r) {
     // Ensure that k and r are non-negative and r > 0
     if (k < 0 || r <= 0) {
-        return -std::numeric_limits<double>::infinity();  // Handle invalid
-                                                          // cases appropriately
+        return -std::numeric_limits<double>::infinity();
     }
 
     if (k <= MAX_K && r <= MAX_R) {

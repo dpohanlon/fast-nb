@@ -15,7 +15,7 @@
 // Threshold for switching to Stirling's approximation
 const double STIRLING_THRESHOLD = 10.0;
 
-// Define the fixed block size (tune this based on your needs)
+// Define the fixed block size
 constexpr int BLOCK_SIZE = 2048;
 
 // Define fixed-size Eigen vector types for integers and doubles
