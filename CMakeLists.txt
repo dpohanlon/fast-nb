@@ -40,7 +40,7 @@ find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 # Find Boost
 if(ENABLE_BOOST)
     # Specify the Boost components you need
-    set(BOOST_COMPONENTS filesystem system math sort)  # Added 'math'
+    set(BOOST_COMPONENTS filesystem system sort)
 
     # Optionally specify the Boost root if it's in a non-standard location
     # set(BOOST_ROOT "/path/to/boost")
@@ -48,7 +48,7 @@ if(ENABLE_BOOST)
     # set(BOOST_LIBRARYDIR "/path/to/boost/lib")
 
     set(Boost_USE_STATIC_LIBS ON)
-    find_package(Boost 1.70.0 REQUIRED system math)
+    find_package(Boost 1.70.0 REQUIRED system)
 
     if(Boost_FOUND)
         message(STATUS "Boost version: ${Boost_VERSION}")

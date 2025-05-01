@@ -15,10 +15,8 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                # os: [ubuntu-latest, macos-13, macos-14]
-                # python-version: ["3.10", "3.11", "3.12", "3.13"]
-                os: [macos-14]
-                python-version: ["3.13"]
+                os: [ubuntu-latest, macos-13, macos-14]
+                python-version: ["3.10", "3.11", "3.12", "3.13"]
 
         steps:
             - uses: actions/checkout@v3
@@ -48,7 +46,6 @@ jobs:
                   brew install boost
                   echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
 
-            # Make sure we're only building wheels for the OS version we're on
             - name: Set macOS deployment target
               if: runner.os == 'macOS'
               run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d '.' -f 1-2)" >> $GITHUB_ENV
@@ -63,14 +60,12 @@ jobs:
                   OpenMP_ROOT: ${{ env.OpenMP_ROOT }}
                   CIBW_BEFORE_ALL_LINUX: |
                       yum -y install wget
-                      # Install Boost from source - this takes a while, unfortunately
                       BOOST_VERSION=1.81.0
                       wget https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.gz
                       tar -xzf boost_${BOOST_VERSION//./_}.tar.gz
                       cd boost_${BOOST_VERSION//./_}
                       ./bootstrap.sh --prefix=/usr/local
                       ./b2 install
-                      # Install Eigen from source
                       EIGEN_VERSION=3.4.0
                       wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz
                       tar -xzf eigen-${EIGEN_VERSION}.tar.gz
@@ -81,10 +76,14 @@ jobs:
 
             - name: Run Tests
               if: runner.os == 'Linux'
+              env:
+                  PYVER_NO_DOTS: ${{ matrix.python-version }}
               run: |
                   pip install nose2
                   pip install scipy
-                  pip install wheelhouse/fast_negative_binomial-0.1.0-cp313-cp313-manylinux_2_28_x86_64.whl
+                  PY_ABI_TAG=cp${PYVER_NO_DOTS//./}
+                  WHL_PATH=$(ls wheelhouse/fast_negative_binomial-0.1.0-${PY_ABI_TAG}*-manylinux_2_28_x86_64.whl)
+                  pip install "$WHL_PATH"
                   cd tests
                   nose2
 
@@ -119,6 +118,7 @@ jobs:
     publish:
         needs: [build_wheels]
         runs-on: ubuntu-latest
+        if: startsWith(github.ref, 'refs/tags')
         steps:
             - uses: actions/download-artifact@v4
               with:
@@ -126,13 +126,11 @@ jobs:
                   path: dist/
                   merge-multiple: true
             - name: Publish to test PyPI
-              if: ${{!startsWith(github.ref, 'refs/tags')}}
               uses: pypa/gh-action-pypi-publish@v1.4.2
               with:
                   password: ${{ secrets.TEST_PYPI_API_TOKEN }}
                   repository_url: https://test.pypi.org/legacy/
             - name: Publish tagged version to PyPI
-              if: startsWith(github.ref, 'refs/tags')
               uses: pypa/gh-action-pypi-publish@v1.4.2
               with:
                   password: ${{ secrets.PYPI_API_TOKEN }}

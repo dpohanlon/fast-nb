@@ -29,7 +29,7 @@ Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k_in, T r, double p) {
     Eigen::VectorXd results(k.size());
 
     boost::sort::spreadsort::spreadsort(k.begin(),
-                                        k.end());  // Faster for smaller data
+                                        k.end());
 
     LgammaCache lgamma_kr;
     LgammaCache lgamma_k1;
@@ -76,17 +76,6 @@ Eigen::VectorXd nb_base_vec_eigen_sorted(const Eigen::VectorXi &k, T r,
     return results;
 }
 
-/**
- * @brief Computes the Negative Binomial PMF for a single block.
- *
- * @param k_block           The block of k values.
- * @param res_block         Reference to store the computed PMF results.
- * @param lgamma_r          Precomputed log gamma of r.
- * @param log_p             Precomputed log(p).
- * @param log_1_minus_p     Precomputed log(1 - p).
- * @param r                 The 'r' parameter of the Negative Binomial
- * distribution.
- */
 inline void compute_pmf_block(const FixedVectorXi &k_block,
                               FixedVectorXd &res_block, const double lgamma_r,
                               const double log_p, const double log_1_minus_p,
@@ -106,18 +95,6 @@ inline void compute_pmf_block(const FixedVectorXi &k_block,
     }
 }
 
-/**
- * @brief Processes all complete blocks in parallel using OpenMP.
- *
- * @param k                 The sorted vector of k values.
- * @param results           Reference to store all computed PMF results.
- * @param lgamma_r          Precomputed log gamma of r.
- * @param log_p             Precomputed log(p).
- * @param log_1_minus_p     Precomputed log(1 - p).
- * @param r                 The 'r' parameter of the Negative Binomial
- * distribution.
- * @param num_blocks        The number of complete blocks to process.
- */
 void process_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
                     const double lgamma_r, const double log_p,
                     const double log_1_minus_p, const double r,
@@ -143,18 +120,6 @@ void process_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
     }
 }
 
-/**
- * @brief Processes the remaining elements that do not fit into a complete
- * block.
- *
- * @param k         The sorted vector of k values.
- * @param start     The starting index of the remaining segment.
- * @param remaining The number of remaining elements.
- * @param r         The 'r' parameter of the Negative Binomial distribution.
- * @param p         The probability parameter of the Negative Binomial
- * distribution.
- * @return Eigen::VectorXd The computed PMF for the remaining elements.
- */
 Eigen::VectorXd process_remaining(const Eigen::VectorXi &k, const int start,
                                   const int remaining, const double r,
                                   const double p, bool log = false) {
@@ -162,16 +127,6 @@ Eigen::VectorXd process_remaining(const Eigen::VectorXi &k, const int start,
     return nb_base_vec_eigen_sorted(k_remaining, r, p, log);
 }
 
-/**
- * @brief Computes the Negative Binomial PMF in blocks, leveraging parallel
- * processing and Eigen optimizations.
- *
- * @tparam T Type of the 'r' parameter (e.g., int, double).
- * @param k     The vector of k values (will be sorted in-place).
- * @param r     The 'r' parameter of the Negative Binomial distribution.
- * @param p     The probability parameter of the Negative Binomial distribution.
- * @return Eigen::VectorXd The computed PMF values.
- */
 template <typename T>
 Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
                                                  T r, double p,
