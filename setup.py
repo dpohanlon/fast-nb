@@ -5,7 +5,7 @@ from setuptools import find_packages
 
 setup(
     name="fast_negative_binomial",
-    version="1.0.0",
+    version="1.0.1",
     description="Python bindings for Negative Binomial PMF",
     author="Daniel O'Hanlon",
     author_email="dpohanlon@gmail.com",
