@@ -74,25 +74,19 @@ jobs:
                       cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
                       make install
 
-            - name: Run Tests
-              if: runner.os == 'Linux'
-              env:
-                  PYVER_NO_DOTS: ${{ matrix.python-version }}
-              run: |
-                  pip install nose2
-                  pip install scipy
-                  PY_ABI_TAG=cp${PYVER_NO_DOTS//./}
-                  VERSION=$(git describe --tags --abbrev=0)
-                  WHL_PATH=$(ls wheelhouse/fast_negative_binomial-${VERSION#v}-${PY_ABI_TAG}*-manylinux_2_28_x86_64.whl)
-                  pip install "$WHL_PATH"
-                  cd tests
-                  nose2
-
-            - name: Upload wheels
-              uses: actions/upload-artifact@v4
-              with:
-                  name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-                  path: wheelhouse/*.whl
+          - name: Run Tests
+            if: runner.os == 'Linux'
+            run: |
+              pip install nose2 scipy
+              pip install --no-index --find-links=wheelhouse fast_negative_binomial
+              cd tests
+              nose2
+    
+                - name: Upload wheels
+                  uses: actions/upload-artifact@v4
+                  with:
+                      name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+                      path: wheelhouse/*.whl
 
     release:
         needs: [build_wheels]
