@@ -13,7 +13,6 @@ setup(
     packages=['fast_negative_binomial'],
     install_requires=[
         "numpy>=1.18.0",
-        "pybind11>=2.6",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
