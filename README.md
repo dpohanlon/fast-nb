@@ -4,7 +4,7 @@
       A fast negative-binomial distribution for Python and C++
 </p>
 
-![Tests!](https://github.com/dpohanlon/fast-nb/actions/workflows/python-app.yml/badge.svg)
+![Tests!](https://github.com/dpohanlon/fast-nb/actions/workflows/build.yml/badge.svg)
 
 Intro
 =====
