@@ -42,7 +42,7 @@ void process_grad_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &grad_p,
                          int num_blocks) {
     double digamma_r = boost::math::digamma(r);
 
-#pragma omp parallel
+#pragma omp parallel if (!omp_in_parallel())
     {
 #pragma omp for schedule(static)
         for (int block = 0; block < num_blocks; ++block) {

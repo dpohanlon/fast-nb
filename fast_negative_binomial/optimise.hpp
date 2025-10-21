@@ -89,10 +89,14 @@ std::pair<std::vector<double>, std::vector<double>> optimise_all_genes(
     std::vector<double> r_opt(num_genes);
     std::vector<double> m_opt(num_genes);
 
-    // Don't parallelise here, as it's done elsewhere within the loop
+    const int num_cells = k.cols();
+    const bool parallel_genes = num_genes > num_cells;
+
+#pragma omp parallel for if (parallel_genes) schedule(dynamic)
     for (int i = 0; i < num_genes; ++i) {
         Eigen::VectorXi gene_data = k.row(i).transpose();
-        std::tie(r_opt[i], m_opt[i]) = optimise(gene_data, m_vec[i], r_vec[i], learning_rate, max_iterations);
+        std::tie(r_opt[i], m_opt[i]) = optimise(gene_data, m_vec[i], r_vec[i],
+                                                learning_rate, max_iterations);
     }
 
     return std::make_pair(r_opt, m_opt);
@@ -114,9 +118,14 @@ std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> optimi
     std::vector<double> m_opt(num_genes);
     std::vector<double> a_opt(num_genes);
 
+    const int num_cells = k.cols();
+    const bool parallel_genes = num_genes > num_cells;
+
+#pragma omp parallel for if (parallel_genes) schedule(dynamic)
     for (int i = 0; i < num_genes; ++i) {
         Eigen::VectorXi gene_data = k.row(i).transpose();
-        std::tie(r_opt[i], m_opt[i], a_opt[i]) = optimise_zi(gene_data, m_vec[i], r_vec[i], alpha_vec[i], learning_rate, max_iterations);
+        std::tie(r_opt[i], m_opt[i], a_opt[i]) = optimise_zi(
+            gene_data, m_vec[i], r_vec[i], alpha_vec[i], learning_rate, max_iterations);
     }
 
     return std::make_tuple(r_opt, m_opt, a_opt);
