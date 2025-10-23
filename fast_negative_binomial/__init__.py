@@ -11,12 +11,13 @@ from .fast_negative_binomial import (
     optimise_all_genes,
     optimise_zi,
     optimise_all_genes_zi,
+    optimise_all_genes_exposure,
 )
 
 __all__ = [
     "negative_binomial",
     "negative_binomial2",
-    "log_negative_binomial2"
+    "log_negative_binomial2",
     "negative_binomial_eigen",
     "negative_binomial_vec",
     "negative_binomial2_vec",
@@ -25,5 +26,6 @@ __all__ = [
     "optimise",
     "optimise_all_genes",
     "optimise_zi",
-    "optimise_all_genes_zi"
+    "optimise_all_genes_zi",
+    "optimise_all_genes_exposure",
 ]
