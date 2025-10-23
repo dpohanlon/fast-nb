@@ -75,6 +75,28 @@ std::tuple<double, double, double> optimise_zi(Eigen::VectorXi& k,
     return std::make_tuple(m, r, alpha);
 }
 
+std::pair<double, double> optimise_exposure(
+    Eigen::VectorXi& k,
+    const Eigen::VectorXd& exposure,
+    double mu0 = 10.,
+    double r = 10.,
+    double learning_rate = 0.1,
+    int max_iterations = 1000
+) {
+    for (int iter = 0; iter < max_iterations; ++iter) {
+        Eigen::MatrixXd grad_matrix = log_nb2_gradient_vec_eigen_exposure(k, mu0, r, exposure);
+        Eigen::Vector2d grad = -grad_matrix.colwise().mean();
+
+        mu0 -= learning_rate * grad[0];
+        r   -= learning_rate * grad[1];
+
+        if (!std::isfinite(mu0) || !std::isfinite(r)) break;
+        mu0 = std::max(mu0, 1.0);
+        r   = std::max(r, 1e-8);
+    }
+    return std::make_pair(mu0, r);
+}
+
 std::pair<std::vector<double>, std::vector<double>> optimise_all_genes(
     Eigen::MatrixXi& k,  Eigen::VectorXd& m_vec,
     Eigen::VectorXd& r_vec, double learning_rate = 1E-2,
@@ -120,4 +142,32 @@ std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> optimi
     }
 
     return std::make_tuple(r_opt, m_opt, a_opt);
+}
+
+std::pair<std::vector<double>, std::vector<double>> optimise_all_genes_exposure(
+    Eigen::MatrixXi& k,                 // shape: genes x cells
+    Eigen::VectorXd& m0_vec,            // mu0 per gene
+    Eigen::VectorXd& r_vec,             // r per gene
+    const Eigen::VectorXd& exposure,    // length = cells
+    double learning_rate = 1E-2,
+    int max_iterations = 1000
+) {
+    const int num_genes = k.rows();
+    if (m0_vec.size() != num_genes || r_vec.size() != num_genes) {
+        throw std::invalid_argument("Size of m0_vec and r_vec must equal number of genes.");
+    }
+    if (exposure.size() != k.cols()) {
+        throw std::invalid_argument("Exposure length must equal number of cells (k.cols()).");
+    }
+
+    std::vector<double> r_opt(num_genes);
+    std::vector<double> m0_opt(num_genes);
+
+    for (int i = 0; i < num_genes; ++i) {
+        Eigen::VectorXi gene_data = k.row(i).transpose();
+        auto pr = optimise_exposure(gene_data, exposure, m0_vec[i], r_vec[i], learning_rate, max_iterations);
+        m0_opt[i] = pr.first;
+        r_opt[i]  = pr.second;
+    }
+    return std::make_pair(m0_opt, r_opt);
 }

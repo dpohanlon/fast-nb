@@ -186,3 +186,120 @@ Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(
 
     return zinb_grad;
 }
+
+inline void compute_grad_block_exposure(
+    const FixedVectorXi &k_block,
+    const FixedVectorXd &e_block,
+    FixedVectorXd &d_mu0_block,
+    FixedVectorXd &d_r_block,
+    double mu0,
+    double r,
+    double digamma_r
+) {
+    // For full blocks only; the remainder is handled separately.
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        const int    ki = k_block[i];
+        const double ej = e_block[i];
+        const double mj = mu0 * ej;                       // per-sample mean
+        const double pj = prob(mj, r);                    // r/(r+mj)
+        const double logp = std::log(pj);
+        const double digamma_kr = boost::math::digamma(static_cast<double>(ki) + r);
+
+        // d(log NB)/dp and chain to m_j then to mu0 via m_j = mu0 * e_j
+        const double dlog_dp = r / pj - static_cast<double>(ki) / (1.0 - pj);
+        const double dp_dm   = -r / ((mj + r) * (mj + r));
+        d_mu0_block[i] = dlog_dp * dp_dm * ej;
+
+        // d(log NB)/dr at (r, p_j) with p_j a function of m_j (but derivative here w.r.t r only)
+        d_r_block[i] = logp - digamma_r + digamma_kr;
+    }
+}
+
+inline void process_grad_blocks_exposure(
+    const Eigen::VectorXi &k,
+    const Eigen::VectorXd &exposure,
+    Eigen::VectorXd &d_mu0,
+    Eigen::VectorXd &d_r,
+    double mu0,
+    double r,
+    int num_blocks
+) {
+    const double digamma_r = boost::math::digamma(r);
+
+    #pragma omp parallel
+    {
+        #pragma omp for schedule(static)
+        for (int block = 0; block < num_blocks; ++block) {
+            const int start = block * BLOCK_SIZE;
+
+            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
+            FixedVectorXd e_block = Eigen::Map<const FixedVectorXd>(exposure.data() + start);
+
+            FixedVectorXd d_mu0_block, d_r_block;
+            compute_grad_block_exposure(k_block, e_block, d_mu0_block, d_r_block, mu0, r, digamma_r);
+
+            Eigen::Map<FixedVectorXd>(d_mu0.data() + start) = d_mu0_block;
+            Eigen::Map<FixedVectorXd>(d_r.data()   + start) = d_r_block;
+        }
+    }
+}
+
+inline Eigen::MatrixXd process_grad_remaining_exposure(
+    const Eigen::VectorXi &k,
+    const Eigen::VectorXd &exposure,
+    int start,
+    int remaining,
+    double mu0,
+    double r
+) {
+    Eigen::MatrixXd out(remaining, 2);
+    const double digamma_r = boost::math::digamma(r);
+
+    for (int i = 0; i < remaining; ++i) {
+        const int    idx = start + i;
+        const int    ki  = k[idx];
+        const double ej  = exposure[idx];
+        const double mj  = mu0 * ej;
+        const double pj  = prob(mj, r);
+        const double logp = std::log(pj);
+        const double digamma_kr = boost::math::digamma(static_cast<double>(ki) + r);
+
+        const double dlog_dp = r / pj - static_cast<double>(ki) / (1.0 - pj);
+        const double dp_dm   = -r / ((mj + r) * (mj + r));
+
+        out(i, 0) = dlog_dp * dp_dm * ej;                  // d/d mu0
+        out(i, 1) = logp - digamma_r + digamma_kr;         // d/d r
+    }
+    return out;
+}
+
+inline Eigen::MatrixXd log_nb2_gradient_vec_eigen_exposure(
+    const Eigen::VectorXi &k,
+    double mu0,
+    double r,
+    const Eigen::VectorXd &exposure
+) {
+    // No sorting here — p varies per observation via exposure.
+    const int n = static_cast<int>(k.size());
+
+    Eigen::MatrixXd grad(n, 2);
+    Eigen::VectorXd d_mu0(n), d_r(n);
+
+    const int num_blocks = n / BLOCK_SIZE;
+    const int remaining  = n % BLOCK_SIZE;
+
+    if (num_blocks > 0) {
+        process_grad_blocks_exposure(k, exposure, d_mu0, d_r, mu0, r, num_blocks);
+    }
+
+    if (remaining > 0) {
+        const int start = num_blocks * BLOCK_SIZE;
+        Eigen::MatrixXd tail = process_grad_remaining_exposure(k, exposure, start, remaining, mu0, r);
+        d_mu0.segment(start, remaining) = tail.col(0);
+        d_r.segment(start, remaining)   = tail.col(1);
+    }
+
+    grad.col(0) = d_mu0;
+    grad.col(1) = d_r;
+    return grad;
+}
