@@ -159,33 +159,47 @@ Eigen::MatrixXd log_nb2_gradient_vec_eigen_blocks_no_copy(
 
 Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(
     const Eigen::VectorXi &k_in, double m, double r, double alpha) {
+
+    const double eps_prob = 1e-300;
+    const double eps_one  = 1e-12;
+    const double eps_a    = 1e-8;
+
+    double a = std::clamp(alpha, eps_a, 1.0 - eps_a);
+
     double p = prob(m, r);
 
-    // Probably quite slow to do it this way
     Eigen::MatrixXd nb_grad = log_nb_gradient_vec_eigen_blocks(k_in, r, p);
 
     // Chain rule to go from d(logNB)/dp to d(logNB2)/dm
 
     double dp_dm = -r / ((m + r) * (m + r));
-
     nb_grad.col(0) = nb_grad.col(0).array() * dp_dm;
 
     Eigen::VectorXd nb_probs = nb_base_vec_eigen_blocks(k_in, r, p);
 
+    nb_probs = nb_probs.array().max(eps_prob).min(1.0 - eps_one);
+
     Eigen::MatrixXd zinb_grad(k_in.size(), 3);
     zinb_grad.leftCols(2) = nb_grad;
 
+    Eigen::ArrayXd denom_zero = a + (1.0 - a) * nb_probs.array();
+    denom_zero = denom_zero.max(eps_one);
+
     Eigen::VectorXd alpha_grad_if_zero =
-        (1 - nb_probs.array()) / (alpha + (1 - alpha) * nb_probs.array());
+        (1.0 - nb_probs.array()) / denom_zero;
+
+    double denom_nz = (1.0 - a);
+    if (denom_nz < eps_one) denom_nz = eps_one;
 
     Eigen::VectorXd alpha_grad_if_nonzero =
-        -nb_probs.array() / ((1 - alpha) * nb_probs.array());
+        Eigen::VectorXd::Constant(k_in.size(), -1.0 / denom_nz);
 
     zinb_grad.col(2) =
         (k_in.array() == 0).select(alpha_grad_if_zero, alpha_grad_if_nonzero);
 
     return zinb_grad;
 }
+
 
 inline void compute_grad_block_exposure(
     const FixedVectorXi &k_block,
