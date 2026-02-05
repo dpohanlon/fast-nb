@@ -111,3 +111,20 @@ double zinb2_base(T k, double m, double r, double alpha) {
 
     return (k == 0) ? ((1.0 - alpha) * nb_prob + alpha) : ((1.0 - alpha) * nb_prob);
 }
+
+inline double nb2_base_exposure(int k, double mu0, double r, double exposure) {
+    // m : mean on this observation after offset; r : concentration
+    const double m = mu0 * exposure;
+    const double p = prob(m, r);
+    return nb_base(k, r, p);
+}
+
+template <typename T>
+inline double zinb2_base_exposure(T k, double mu0, double r, double alpha, double exposure) {
+    // m : mean on this observation after offset; r : concentration
+    const double m = mu0 * exposure;
+    const double p = prob(m, r);
+    const double nb_prob = nb_base(k, r, p);
+    return (k == 0) ? ((1.0 - alpha) * nb_prob + alpha)
+                    : ((1.0 - alpha) * nb_prob);
+}

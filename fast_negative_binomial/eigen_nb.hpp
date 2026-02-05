@@ -233,3 +233,68 @@ Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
 
     return zinb_probs;
 }
+
+inline Eigen::VectorXd nb2_base_vec_eigen_exposure(
+    const Eigen::VectorXi &k,
+    double mu0,
+    double r,
+    const Eigen::VectorXd &exposure,
+    bool log = false
+) {
+    const int n = static_cast<int>(k.size());
+    Eigen::VectorXd results(n);
+
+    const double lgamma_r = std::lgamma(r);
+
+    #pragma omp parallel for schedule(static)
+    for (int start = 0; start < n; start += BLOCK_SIZE) {
+        LgammaCache lgamma_kr_local;
+        LgammaCache lgamma_k1_local;
+
+        const int end = std::min(start + BLOCK_SIZE, n);
+        for (int i = start; i < end; ++i) {
+            const double m = mu0 * exposure[i];
+            const double p = prob(m, r);
+            results[i] = nb_base_fixed_r_opt(
+                k[i], r, p, lgamma_r,
+                lgamma_kr_local, lgamma_k1_local,
+                log
+            );
+        }
+    }
+    return results;
+}
+
+inline Eigen::VectorXd zinb2_base_vec_eigen_exposure(
+    const Eigen::VectorXi &k,
+    double mu0,
+    double r,
+    double alpha,
+    const Eigen::VectorXd &exposure
+) {
+    const int n = static_cast<int>(k.size());
+    Eigen::VectorXd out(n);
+
+    const double lgamma_r = std::lgamma(r);
+
+    #pragma omp parallel for schedule(static)
+    for (int start = 0; start < n; start += BLOCK_SIZE) {
+        LgammaCache lgamma_kr_local;
+        LgammaCache lgamma_k1_local;
+
+        const int end = std::min(start + BLOCK_SIZE, n);
+        for (int i = start; i < end; ++i) {
+            const double m = mu0 * exposure[i];
+            const double p = prob(m, r);
+            const double nbv = nb_base_fixed_r_opt(
+                k[i], r, p, lgamma_r,
+                lgamma_kr_local, lgamma_k1_local,
+                false
+            );
+            double v = (1.0 - alpha) * nbv;
+            if (k[i] == 0) v += alpha;
+            out[i] = v;
+        }
+    }
+    return out;
+}

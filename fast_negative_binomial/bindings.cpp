@@ -220,6 +220,23 @@ PYBIND11_MODULE(fast_negative_binomial, m) {
                 np.array: optimised m, r for each gene
         )pbdoc");
 
+    m.def("optimise_all_genes_exposure",
+        [](Eigen::MatrixXi& k,
+           Eigen::VectorXd& m0_vec,
+           Eigen::VectorXd& r_vec,
+           Eigen::VectorXd& exposure,
+           double learning_rate,
+           int max_iterations) {
+            return optimise_all_genes_exposure(k, m0_vec, r_vec, exposure, learning_rate, max_iterations);
+        },
+        py::arg("k"),
+        py::arg("m0_vec"),
+        py::arg("r_vec"),
+        py::arg("exposure"),
+        py::arg("learning_rate") = 1e-2,
+        py::arg("max_iterations") = 1000
+    );
+
     m.def(
         "optimise_zi",
         [](Eigen::VectorXi& data, double m, double r, double alpha,

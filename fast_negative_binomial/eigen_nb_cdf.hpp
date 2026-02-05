@@ -129,3 +129,141 @@ Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
 
     return zinb_cdf;
 }
+
+inline double nb2_cdf_single_exposure(int k, double mu0, double r, double exposure) {
+    const double m = mu0 * exposure;
+    const double p = prob(m, r);
+    return nb_cdf_single(k, r, p);  // CDF = I_p(r, k+1)
+}
+
+inline double zinb2_cdf_single_exposure(int k, double mu0, double r, double alpha, double exposure) {
+    const double m = mu0 * exposure;
+    const double p = prob(m, r);
+    const double nb_cdf = nb_cdf_single(k, r, p);
+    return alpha + (1.0 - alpha) * nb_cdf;
+}
+
+inline void compute_cdf_block_exposure(const FixedVectorXi &k_block,
+                                       const FixedVectorXd &exposure_block,
+                                       FixedVectorXd &cdf_block,
+                                       double r, double mu0) {
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        const double m = mu0 * exposure_block[i];
+        const double p = prob(m, r);
+        // CDF(r, k, p) = ibeta(r, k+1, p)
+        const double rr = static_cast<double>(r);
+        const double kk = static_cast<double>(k_block[i]) + 1.0;
+        cdf_block[i] = boost::math::ibeta(rr, kk, p);
+    }
+}
+
+inline void compute_zinb_cdf_block_exposure(const FixedVectorXi &k_block,
+                                            const FixedVectorXd &exposure_block,
+                                            FixedVectorXd &cdf_block,
+                                            double r, double mu0, double alpha) {
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        const double m = mu0 * exposure_block[i];
+        const double p = prob(m, r);
+        const double rr = static_cast<double>(r);
+        const double kk = static_cast<double>(k_block[i]) + 1.0;
+        const double nb_cdf = boost::math::ibeta(rr, kk, p);
+        cdf_block[i] = alpha + (1.0 - alpha) * nb_cdf;
+    }
+}
+
+inline Eigen::VectorXd process_cdf_remaining_exposure(const Eigen::VectorXi &k,
+                                                      const Eigen::VectorXd &exposure,
+                                                      int start, int remaining,
+                                                      double r, double mu0) {
+    Eigen::VectorXd out(remaining);
+    for (int i = 0; i < remaining; ++i) {
+        const double m = mu0 * exposure[start + i];
+        const double p = prob(m, r);
+        const double rr = static_cast<double>(r);
+        const double kk = static_cast<double>(k[start + i]) + 1.0;
+        out[i] = boost::math::ibeta(rr, kk, p);
+    }
+    return out;
+}
+
+inline Eigen::VectorXd process_zinb_cdf_remaining_exposure(const Eigen::VectorXi &k,
+                                                           const Eigen::VectorXd &exposure,
+                                                           int start, int remaining,
+                                                           double r, double mu0, double alpha) {
+    Eigen::VectorXd out(remaining);
+    for (int i = 0; i < remaining; ++i) {
+        const double m = mu0 * exposure[start + i];
+        const double p = prob(m, r);
+        const double rr = static_cast<double>(r);
+        const double kk = static_cast<double>(k[start + i]) + 1.0;
+        const double nb_cdf = boost::math::ibeta(rr, kk, p);
+        out[i] = alpha + (1.0 - alpha) * nb_cdf;
+    }
+    return out;
+}
+
+inline Eigen::VectorXd nb2_cdf_vec_eigen_exposure(const Eigen::VectorXi &k,
+                                                  double mu0, double r,
+                                                  const Eigen::VectorXd &exposure) {
+    const int n = static_cast<int>(k.size());
+    Eigen::VectorXd results(n);
+
+    // Process complete blocks
+    const int num_blocks = n / BLOCK_SIZE;
+    if (num_blocks > 0) {
+        #pragma omp parallel for schedule(static)
+        for (int block = 0; block < num_blocks; ++block) {
+            const int start = block * BLOCK_SIZE;
+
+            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
+            FixedVectorXd e_block = Eigen::Map<const FixedVectorXd>(exposure.data() + start);
+
+            FixedVectorXd cdf_block;
+            compute_cdf_block_exposure(k_block, e_block, cdf_block, r, mu0);
+
+            Eigen::Map<FixedVectorXd>(results.data() + start) = cdf_block;
+        }
+    }
+
+    // Process remainder
+    const int remaining = n % BLOCK_SIZE;
+    if (remaining > 0) {
+        const int start = num_blocks * BLOCK_SIZE;
+        Eigen::VectorXd tail = process_cdf_remaining_exposure(k, exposure, start, remaining, r, mu0);
+        results.segment(start, remaining) = tail;
+    }
+
+    return results;
+}
+
+inline Eigen::VectorXd zinb2_cdf_vec_eigen_exposure(const Eigen::VectorXi &k,
+                                                    double mu0, double r, double alpha,
+                                                    const Eigen::VectorXd &exposure) {
+    const int n = static_cast<int>(k.size());
+    Eigen::VectorXd results(n);
+
+    const int num_blocks = n / BLOCK_SIZE;
+    if (num_blocks > 0) {
+        #pragma omp parallel for schedule(static)
+        for (int block = 0; block < num_blocks; ++block) {
+            const int start = block * BLOCK_SIZE;
+
+            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
+            FixedVectorXd e_block = Eigen::Map<const FixedVectorXd>(exposure.data() + start);
+
+            FixedVectorXd cdf_block;
+            compute_zinb_cdf_block_exposure(k_block, e_block, cdf_block, r, mu0, alpha);
+
+            Eigen::Map<FixedVectorXd>(results.data() + start) = cdf_block;
+        }
+    }
+
+    const int remaining = n % BLOCK_SIZE;
+    if (remaining > 0) {
+        const int start = num_blocks * BLOCK_SIZE;
+        Eigen::VectorXd tail = process_zinb_cdf_remaining_exposure(k, exposure, start, remaining, r, mu0, alpha);
+        results.segment(start, remaining) = tail;
+    }
+
+    return results;
+}
