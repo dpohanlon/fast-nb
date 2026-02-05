@@ -34,7 +34,10 @@ endif()
 # Find Threads
 find_package(Threads REQUIRED)
 
-find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(Eigen3 5.0 QUIET NO_MODULE)
+if(NOT Eigen3_FOUND)
+  find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+endif()
 #include_directories( "/usr/local/include/eigen3" )
 
 # Find Boost
