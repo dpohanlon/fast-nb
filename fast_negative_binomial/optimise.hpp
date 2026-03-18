@@ -108,15 +108,14 @@ std::tuple<double, double, double> optimise_zi(Eigen::VectorXi& k,
         double a_cur = sigmoid(theta_a);
         a_cur = std::clamp(a_cur, eps_a, 1.0 - eps_a);
 
-        Eigen::MatrixXd grad_matrix =
-            log_zinb_gradient_vec_eigen_blocks_post_process_select(k, m_cur, r_cur, a_cur);
+        auto grad_means = log_zinb_gradient_means_eigen_blocks_post_process_select(k, m_cur, r_cur, a_cur);
 
-        if (!grad_matrix.allFinite()) {
-            std::cerr << "Error: Non-finite values encountered in ZI grad_matrix." << std::endl;
+        if (grad_means.second) {
+            std::cerr << "Error: Non-finite values encountered in ZI grad means." << std::endl;
             break;
         }
 
-        Eigen::Vector3d g = -grad_matrix.colwise().mean(); // dL/dm, dL/dr, dL/dalpha
+        Eigen::Vector3d g = -grad_means.first;
 
         double dm_dtheta = sigmoid(theta_m);
         double dr_dtheta = sigmoid(theta_r);

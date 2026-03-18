@@ -85,6 +85,7 @@ Eigen::MatrixXd log_nb_gradient_vec_eigen_blocks_no_copy(
     Eigen::Ref<Eigen::VectorXi> k, T r, double p) {
     // Sort k in-place
     boost::sort::parallel_stable_sort(k.data(), k.data() + k.size());
+    // boost::sort::flat_stable_sort(k.data(), k.data() + k.size());
 
     // Prepare storage
     Eigen::MatrixXd grad(k.size(), 2);
@@ -200,6 +201,243 @@ Eigen::MatrixXd log_zinb_gradient_vec_eigen_blocks_post_process_select(
     return zinb_grad;
 }
 
+inline void process_grad_remaining_sumcheck(
+    const Eigen::VectorXi &k,
+    int start,
+    int remaining,
+    double r,
+    double p,
+    double &sum_p,
+    double &sum_r,
+    int &any_nonfinite
+) {
+    const double digamma_r = boost::math::digamma(r);
+
+    double sp = 0.0;
+    double sr = 0.0;
+    int bad = 0;
+
+    double last_gp = 0.0;
+    double last_gr = 0.0;
+    bool have_last = false;
+
+    for (int i = 0; i < remaining; ++i) {
+        const int idx = start + i;
+
+        double gp, gr;
+        if (have_last && i > 0 && k[idx] == k[idx - 1]) {
+            gp = last_gp;
+            gr = last_gr;
+        } else {
+            const double val_kr =
+                boost::math::digamma(static_cast<double>(k[idx]) + r);
+            gp = r / p - static_cast<double>(k[idx]) / (1.0 - p);
+            gr = std::log(p) - digamma_r + val_kr;
+            last_gp = gp;
+            last_gr = gr;
+            have_last = true;
+        }
+
+        sp += gp;
+        sr += gr;
+        bad |= (!std::isfinite(gp) || !std::isfinite(gr));
+    }
+
+    sum_p = sp;
+    sum_r = sr;
+    any_nonfinite = bad;
+}
+
+inline void compute_grad_block_sumcheck(
+    const FixedVectorXi &k_block,
+    double r,
+    double p,
+    double digamma_r,
+    double &sum_p,
+    double &sum_r,
+    int &any_nonfinite
+) {
+    double sp = 0.0;
+    double sr = 0.0;
+    int bad = 0;
+
+    double last_gp = 0.0;
+    double last_gr = 0.0;
+    bool have_last = false;
+
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        double gp, gr;
+
+        if (have_last && i > 0 && k_block[i] == k_block[i - 1]) {
+            gp = last_gp;
+            gr = last_gr;
+        } else {
+            const double val_kr =
+                boost::math::digamma(static_cast<double>(k_block[i]) + r);
+            gp = r / p - static_cast<double>(k_block[i]) / (1.0 - p);
+            gr = std::log(p) - digamma_r + val_kr;
+            last_gp = gp;
+            last_gr = gr;
+            have_last = true;
+        }
+
+        sp += gp;
+        sr += gr;
+        bad |= (!std::isfinite(gp) || !std::isfinite(gr));
+    }
+
+    sum_p = sp;
+    sum_r = sr;
+    any_nonfinite = bad;
+}
+
+
+inline void process_grad_blocks_sumcheck(
+    const Eigen::VectorXi &k,
+    double r,
+    double p,
+    int num_blocks,
+    double &sum_grad_p,
+    double &sum_grad_r,
+    int &any_nonfinite
+) {
+    const double digamma_r = boost::math::digamma(r);
+
+    double sp = 0.0;
+    double sr = 0.0;
+    int bad = 0;
+
+    #pragma omp parallel for schedule(static) reduction(+:sp,sr) reduction(|:bad)
+    for (int block = 0; block < num_blocks; ++block) {
+        const int start = block * BLOCK_SIZE;
+        const Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
+
+        double local_sp = 0.0, local_sr = 0.0;
+        int local_bad = 0;
+
+        compute_grad_block_sumcheck(k_block, r, p, digamma_r, local_sp, local_sr, local_bad);
+
+        sp += local_sp;
+        sr += local_sr;
+        bad |= local_bad;
+    }
+
+    sum_grad_p = sp;
+    sum_grad_r = sr;
+    any_nonfinite = bad;
+}
+
+template <typename T>
+inline std::pair<Eigen::Vector2d, bool> log_nb_gradient_means_eigen_blocks_no_copy(
+    Eigen::Ref<Eigen::VectorXi> k,
+    T r,
+    double p
+) {
+    const int n = static_cast<int>(k.size());
+    const int num_blocks = n / BLOCK_SIZE;
+    const int remaining  = n % BLOCK_SIZE;
+
+    double sum_p = 0.0, sum_r = 0.0;
+    int bad = 0;
+
+    if (num_blocks > 0) {
+        double bp = 0.0, br = 0.0;
+        int bbad = 0;
+        process_grad_blocks_sumcheck(k, r, p, num_blocks, bp, br, bbad);
+        sum_p += bp;
+        sum_r += br;
+        bad |= bbad;
+    }
+
+    if (remaining > 0) {
+        const int start = num_blocks * BLOCK_SIZE;
+        double tp = 0.0, tr = 0.0;
+        int tbad = 0;
+        process_grad_remaining_sumcheck(k, start, remaining, r, p, tp, tr, tbad);
+        sum_p += tp;
+        sum_r += tr;
+        bad |= tbad;
+    }
+
+    Eigen::Vector2d means;
+    const double inv_n = 1.0 / static_cast<double>(n);
+    means[0] = sum_p * inv_n;
+    means[1] = sum_r * inv_n;
+    return {means, bad != 0};
+}
+
+template <typename T>
+inline std::pair<Eigen::Vector2d, bool> log_nb_gradient_means_eigen_blocks(
+    const Eigen::VectorXi &k_in,
+    T r,
+    double p
+) {
+    Eigen::VectorXi k_copy = k_in;
+    return log_nb_gradient_means_eigen_blocks_no_copy(k_copy, r, p);
+}
+
+inline std::pair<Eigen::Vector3d, bool> log_zinb_gradient_means_eigen_blocks_post_process_select(
+    const Eigen::VectorXi &k_in,
+    double m,
+    double r,
+    double alpha
+) {
+    const double eps_prob = 1e-300;
+    const double eps_one  = 1e-12;
+    const double eps_a    = 1e-8;
+
+    const double a = std::clamp(alpha, eps_a, 1.0 - eps_a);
+    const double p = prob(m, r);
+    const int n = static_cast<int>(k_in.size());
+
+    // Means for NB part: mean d/dp, mean d/dr (and bad flag)
+    auto nb_means = log_nb_gradient_means_eigen_blocks(k_in, r, p);
+
+    // Chain rule to mean d/dm
+    const double dp_dm = -r / ((m + r) * (m + r));
+    const double mean_dm = nb_means.first[0] * dp_dm;
+    const double mean_dr = nb_means.first[1];
+
+    bool bad = nb_means.second || !std::isfinite(dp_dm);
+
+    // Alpha gradient mean:
+    // grad_alpha = (k==0) ? (1 - nb_prob)/(a + (1-a)*nb_prob) : -1/(1-a)
+    // We can compute nb_prob on the fly and just accumulate the mean.
+
+    const double denom_nz = std::max(1.0 - a, eps_one);
+    const double alpha_grad_nz = -1.0 / denom_nz;
+
+    double sum_alpha = 0.0;
+
+    // This assumes nb_base_vec_eigen_blocks(k_in, r, p) gives per-element NB probabilities.
+    // If it internally allocates a vector, this still avoids the big 3-col grad matrix,
+    // but for maximum memory savings you'd implement a nb_prob means streaming version too.
+    // This is slow
+    Eigen::VectorXd nb_probs = nb_base_vec_eigen_blocks(k_in, r, p);
+    nb_probs = nb_probs.array().max(eps_prob).min(1.0 - eps_one);
+
+    for (int i = 0; i < n; ++i) {
+        const double q = nb_probs[i];
+        double ga;
+        if (k_in[i] == 0) {
+            double denom0 = a + (1.0 - a) * q;
+            if (denom0 < eps_one) denom0 = eps_one;
+            ga = (1.0 - q) / denom0;
+        } else {
+            ga = alpha_grad_nz;
+        }
+        sum_alpha += ga;
+        bad = bad || !std::isfinite(ga);
+    }
+
+    Eigen::Vector3d means;
+    const double inv_n = 1.0 / static_cast<double>(n);
+    means[0] = mean_dm;
+    means[1] = mean_dr;
+    means[2] = sum_alpha * inv_n;
+
+    return {means, bad};
+}
 
 inline void compute_grad_block_exposure(
     const FixedVectorXi &k_block,
@@ -246,8 +484,8 @@ inline void process_grad_blocks_exposure(
         for (int block = 0; block < num_blocks; ++block) {
             const int start = block * BLOCK_SIZE;
 
-            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
-            FixedVectorXd e_block = Eigen::Map<const FixedVectorXd>(exposure.data() + start);
+            const Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
+            const Eigen::Map<const FixedVectorXd> e_block(exposure.data() + start);
 
             FixedVectorXd d_mu0_block, d_r_block;
             compute_grad_block_exposure(k_block, e_block, d_mu0_block, d_r_block, mu0, r, digamma_r);

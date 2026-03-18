@@ -117,17 +117,41 @@ Eigen::VectorXd nb2_cdf_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
     return nb_cdf_vec_eigen_blocks_no_copy(k, r, p);
 }
 
-Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
-                                           double r, double alpha) {
-    double p = prob(m, r);
-    Eigen::VectorXi k_copy = k;
+// Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
+//                                            double r, double alpha) {
+//     double p = prob(m, r);
+//     Eigen::VectorXi k_copy = k;
 
-    Eigen::VectorXd cdf = nb_cdf_vec_eigen_blocks_no_copy(k_copy, r, p);
+//     Eigen::VectorXd cdf = nb_cdf_vec_eigen_blocks_no_copy(k_copy, r, p);
 
-    Eigen::VectorXd zinb_cdf =
-        Eigen::VectorXd::Constant(cdf.size(), alpha) + (1.0 - alpha) * cdf;
+//     Eigen::VectorXd zinb_cdf =
+//         Eigen::VectorXd::Constant(cdf.size(), alpha) + (1.0 - alpha) * cdf;
 
-    return zinb_cdf;
+//     return zinb_cdf;
+// }
+
+Eigen::VectorXd zinb2_cdf_vec_eigen_blocks(
+    const Eigen::VectorXi &k,
+    double m,
+    double r,
+    double alpha
+) {
+    const int n = static_cast<int>(k.size());
+    const double p = prob(m, r);
+
+    std::vector<int> idx(n);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(), [&](int i, int j) { return k[i] < k[j]; });
+
+    Eigen::VectorXi k_sorted(n);
+    for (int i = 0; i < n; ++i) k_sorted[i] = k[idx[i]];
+
+    Eigen::VectorXd cdf_sorted = nb_cdf_vec_eigen_blocks_no_copy(k_sorted, r, p);
+
+    Eigen::VectorXd out(n);
+    for (int i = 0; i < n; ++i) out[idx[i]] = alpha + (1.0 - alpha) * cdf_sorted[i];
+
+    return out;
 }
 
 inline double nb2_cdf_single_exposure(int k, double mu0, double r, double exposure) {
@@ -215,8 +239,8 @@ inline Eigen::VectorXd nb2_cdf_vec_eigen_exposure(const Eigen::VectorXi &k,
         for (int block = 0; block < num_blocks; ++block) {
             const int start = block * BLOCK_SIZE;
 
-            FixedVectorXi k_block = Eigen::Map<const FixedVectorXi>(k.data() + start);
-            FixedVectorXd e_block = Eigen::Map<const FixedVectorXd>(exposure.data() + start);
+            const Eigen::Map<const FixedVectorXi> k_block(k.data() + start);
+            const Eigen::Map<const FixedVectorXd> e_block(exposure.data() + start);
 
             FixedVectorXd cdf_block;
             compute_cdf_block_exposure(k_block, e_block, cdf_block, r, mu0);

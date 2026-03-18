@@ -21,6 +21,7 @@
 #include "log_comb.hpp"
 #endif
 
+// BAD!
 template <typename T>
 Eigen::VectorXd nb_base_vec_eigen(const Eigen::VectorXi &k_in, T r, double p) {
     Eigen::VectorXi k = k_in;
@@ -99,7 +100,10 @@ void process_blocks(const Eigen::VectorXi &k, Eigen::VectorXd &results,
                     const double lgamma_r, const double log_p,
                     const double log_1_minus_p, const double r,
                     const int num_blocks, bool log = false) {
-#pragma omp parallel
+
+    const int do_parallel = !omp_in_parallel();
+
+#pragma omp parallel if(do_parallel)
     {
         // Each thread should have its own cache
         LgammaCache lgamma_kr;
@@ -139,6 +143,7 @@ Eigen::VectorXd nb_base_vec_eigen_blocks_no_copy(Eigen::Ref<Eigen::VectorXi> k,
 
     // Sort k in-place
     boost::sort::parallel_stable_sort(k.data(), k.data() + k.size());
+    // boost::sort::flat_stable_sort(k.data(), k.data() + k.size());
 
     // Initialize results vector
     Eigen::VectorXd results(k.size());
@@ -213,25 +218,63 @@ Eigen::VectorXd log_nb2_base_vec_eigen_blocks_no_copy(
     return nb_base_vec_eigen_blocks_no_copy(k, r, p, true);
 }
 
-Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
-                                            double r, double alpha) {
-    // m : mean
-    // r : concentration
+// Eigen::VectorXd zinb2_base_vec_eigen_blocks(const Eigen::VectorXi &k, double m,
+//                                             double r, double alpha) {
+//     // m : mean
+//     // r : concentration
 
-    double p = prob(m, r);
+//     double p = prob(m, r);
 
-    Eigen::VectorXd probs = nb_base_vec_eigen_blocks(k, r, p);
+//     Eigen::VectorXd probs = nb_base_vec_eigen_blocks(k, r, p);
 
-    Eigen::VectorXd scaled_probs = probs * (1.0 - alpha);
+//     Eigen::VectorXd scaled_probs = probs * (1.0 - alpha);
 
-    Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k.size());
-    Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k.size(), alpha);
+//     Eigen::VectorXd zero_vec = Eigen::VectorXd::Zero(k.size());
+//     Eigen::VectorXd alpha_vec = Eigen::VectorXd::Constant(k.size(), alpha);
 
-    Eigen::VectorXd zero_inflation =
-        (k.array() == 0).select(alpha_vec, zero_vec);
-    Eigen::VectorXd zinb_probs = scaled_probs.array() + zero_inflation.array();
+//     Eigen::VectorXd zero_inflation =
+//         (k.array() == 0).select(alpha_vec, zero_vec);
+//     Eigen::VectorXd zinb_probs = scaled_probs.array() + zero_inflation.array();
 
-    return zinb_probs;
+//     return zinb_probs;
+// }
+
+Eigen::VectorXd zinb2_base_vec_eigen_blocks(
+    const Eigen::VectorXi &k,
+    double m,
+    double r,
+    double alpha
+) {
+    const int n = static_cast<int>(k.size());
+
+    const double eps_a = 1e-8;
+    const double a = std::clamp(alpha, eps_a, 1.0 - eps_a);
+
+    const double p = prob(m, r);
+
+    // Build a permutation that sorts by k, but keep original indices.
+    std::vector<int> idx(n);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(), [&](int i, int j) { return k[i] < k[j]; });
+
+    Eigen::VectorXi k_sorted(n);
+    for (int i = 0; i < n; ++i) k_sorted[i] = k[idx[i]];
+
+    // Compute NB probabilities in the sorted order (no reordering side-effects).
+    // This uses your "sorted" routine; it's serial but correct.
+    Eigen::VectorXd probs_sorted = nb_base_vec_eigen_sorted(k_sorted, r, p, false);
+
+    // Scatter back to original order.
+    Eigen::VectorXd probs(n);
+    for (int i = 0; i < n; ++i) probs[idx[i]] = probs_sorted[i];
+
+    // Apply zero-inflation in original order.
+    Eigen::VectorXd out = (1.0 - a) * probs;
+    for (int i = 0; i < n; ++i) {
+        if (k[i] == 0) out[i] += a;
+    }
+
+    return out;
 }
 
 inline Eigen::VectorXd nb2_base_vec_eigen_exposure(
